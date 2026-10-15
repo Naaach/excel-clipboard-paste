@@ -18,7 +18,6 @@
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-[data-theme="dark"],
 html[data-theme="auto"] {
   color-scheme: light;
 }
@@ -30,6 +29,7 @@ html[data-theme="auto"] {
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0b1120;
   --surface: #0f172a;
   --surface-2: #0b1220;
