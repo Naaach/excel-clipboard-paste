@@ -5,31 +5,42 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 
 ## [Unreleased]
 
+Nada todavía.
+
+## [0.1.0] - 2026-10-15
+
+Primera versión publicada en npm: `excel-clipboard-paste@0.1.0`.
+
 ### Added
-- Pipeline de publicación en npm (`.github/workflows/release.yml`): se dispara con un
-  tag `vX.Y.Z`, corre `typecheck + test + build + size`, publica con `--provenance`
-  y crea la release en GitHub. Idempotente (no republish una versión ya publicada).
-- `parseHtmlTable` ahora expande `colspan`/`rowspan` de forma robusta: los huecos
-  provocados por filas más cortas ya no pierden ni desplazan valores, las tablas
-  anidadas se ignoran y `<br>` dentro de una celda se convierte en salto de línea.
-- `hasHtmlTable(html)` para comprobar si un portapapeles trae tabla sin parsearlo.
+- Parser de portapapeles: `parseClipboard`, `parseClipboardText`, `parseHtmlTable`,
+  `hasHtmlTable`, `readClipboardData` y el alias deprecado `parsePasteEvent`.
+- Opciones estructurales: `trim`, `dropEmptyRows`, `dropEmptyColumns`,
+  `rectangular`, `maxRows` (se aplica al final, sobre el resultado) y `preferHtml`
+  con *fallback* a `text/plain` solo cuando no hay tabla.
+- `parseHtmlTable` expande `colspan`/`rowspan` de forma robusta (con los límites del
+  estándar HTML: colspan ≤ 1000, rowspan ≤ 65534), ignora tablas anidadas y convierte
+  `<br>` en salto de línea.
+- Utilidades de matriz: `matrixStats`, `padMatrix`, `transposeMatrix`,
+  `removeEmptyRows`, `removeEmptyColumns`, `getHeaderRow`, `dropHeaderRow`,
+  `isEmptyMatrix`, `cloneMatrix`, `mapCells`.
+- Coerción opt-in con grupos de miles estrictos (`1,234` sí, `1,5` no) y `-0`
+  normalizado: `coerceCell`, `coerceMatrix`.
 - `toObjects(matrix, { headers })` para convertir la matriz en objetos usando la
   primera fila como cabecera (rellena cabeceras vacías y sufija duplicados).
-- `toJSON` acepta matrices con valores forzados (`coerceMatrix`).
-- `parseClipboardText` ignora el BOM inicial.
-- Playground: importación de `.csv` con detección de delimitador, arrastre de solo
-  archivos, pestañas accesibles (roving tabindex), render por `requestAnimationFrame`.
+- Serializadores: `toCSV` (quoting RFC 4180), `toTSV`, `toMarkdownTable`, `toJSON`
+  (acepta matrices forzadas con `coerceMatrix`).
+- `parseClipboardText` ignora el BOM inicial y normaliza `\r\n` / `\r`.
+- `readClipboardData` degrada a `""` si `getData` lanza o devuelve un no-string.
+- Playground Vite interactivo: pegado real, ejemplos, importación de `.tsv`/`.csv`/`.txt`
+  con detección de delimitador, grid con cap de filas, salidas JSON/CSV/TSV/Markdown,
+  tema claro/oscuro/auto y pestañas accesibles.
+- Build ESM + CJS + tipos (tsup, sin minificar) y cero dependencias de runtime.
+- CI en GitHub Actions (Node 20/22/24) y pipeline de publicación con tags `vX.Y.Z`
+  y `--provenance`.
 
 ### Changed
-- `maxRows` se aplica al final, después de `trim`/`dropEmptyRows`/`dropEmptyColumns`/
-  `rectangular`, de modo que cuenta filas del resultado y no filas crudas.
-- `coerceCell` solo elimina comas cuando forman grupos de miles consistentes
-  (`1,234`); `1,5` ya no se convierte en `15`. `-0` se normaliza a `0`.
-- `removeEmptyColumns` conserva la forma irregular de la matriz (las filas cortas
-  siguen siendo cortas).
-- `readClipboardData` degrada a `""` si `getData` lanza o devuelve un no-string.
-- Build sin minificar (el paquete es minúsculo y así es depurable).
+- Nada (primera versión); las decisiones anteriores a la publicación quedan recogidas
+  en [`PLAN.md`](./PLAN.md) §3 y §9.
 
-## [0.1.0]
-- Primera versión: parser de texto + eventos, ruta HTML opcional, utilidades de
-  matriz, serializadores (CSV, TSV, Markdown, JSON), playground Vite y pruebas.
+### Removed
+- Nada.
