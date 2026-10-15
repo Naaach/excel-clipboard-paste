@@ -183,21 +183,29 @@ Opciones: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows`,
 
 ## 7. Publicación en npm
 
-El nombre hay que **verificarlo** en npm antes de publicar.
+El pipeline ya está montado en [`.github/workflows/release.yml`](./.github/workflows/release.yml):
+se dispara con un tag `vX.Y.Z` (o a mano con `workflow_dispatch`), corre
+`typecheck + test + build + size`, publica en npm **con provenance** (`id-token: write`)
+y crea la release en GitHub. Es idempotente: si la versión ya está en npm, lo salta.
+
+Nombre `excel-clipboard-paste`: **libre** (comprobado con `npm view` el 2026-10-15).
+
+Lo único que falta para publicar por primera vez:
+
+- [ ] Crear un *access token* de tipo **Automation** en npmjs.com y añadirlo como secreto **`NPM_TOKEN`**
+      (*Settings → Secrets and variables → Actions*).
+- [ ] Subir el primer tag:
 
 ```bash
-npm view excel-clipboard-paste   # comprobar disponibilidad
-npm login
-npm publish --access public      # prepublishOnly corre typecheck + build + test
+pnpm version patch      # bump + commit + tag v0.1.0
+git push --follow-tags  # dispara el workflow Release
 ```
 
-Checklist antes de publicar:
-- [x] Metadata completa en `package.json` (`repository`, `homepage`, `bugs`, `author`, `packageManager`).
-- [x] `pnpm typecheck && pnpm test && pnpm build` en verde.
+Checklist de calidad (ya cubierto por el workflow):
+- [x] `pnpm typecheck && pnpm test && pnpm build && pnpm size` en verde.
 - [x] `pnpm pack --dry-run` revisado (solo `dist/`, README y LICENSE).
-- [ ] Verificar que el nombre sigue libre.
-- [ ] Probar el `.tgz` instalándolo en un proyecto limpio.
-- [ ] Decidir versión inicial (¿`0.1.0` directamente?).
+- [x] Tag y versión verificados automáticamente antes de publicar.
+- [ ] Probar el `.tgz` instalándolo en un proyecto limpio (tras la primera publicación).
 
 ---
 

@@ -1,6 +1,7 @@
 # excel-clipboard-paste
 
 [![CI](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml)
+[![Release](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml)
 
 > Convierte lo que pegas desde **Excel** o **Google Sheets** en una matriz limpia de filas y columnas.
 > Cero dependencias · TypeScript · ESM + CJS · funciona en el navegador y en Node.
@@ -181,6 +182,33 @@ pnpm build:demo # genera la web estática en dist-demo/
 | `pnpm size` | Falla si el bundle ESM supera el presupuesto (6 KB gzip). |
 
 Tamaño actual: **≈ 9.3 KB raw / ≈ 2.8 KB gzip** (ESM, sin minificar).
+
+---
+
+## Publicar una nueva versión
+
+La publicación es automática. El workflow [`Release`](./.github/workflows/release.yml)
+se dispara al empujar un tag `vX.Y.Z`, ejecuta `typecheck` + `test` + `build` + `size`,
+publica en npm con **provenance** y crea la release en GitHub con notas generadas.
+
+Configuración única:
+
+1. Crea un *access token* de tipo **Automation** en npmjs.com
+   (*Account Settings → Access Tokens*).
+2. Añádelo como secreto **`NPM_TOKEN`** en
+   *Settings → Secrets and variables → Actions*.
+
+Publicar es entonces:
+
+```bash
+pnpm version patch   # o minor / major: bump + commit + tag vX.Y.Z
+git push --follow-tags
+```
+
+El workflow además:
+- verifica que el tag coincide con la versión de `package.json`;
+- **no publica dos veces** la misma versión (idempotente al re-lanzarlo);
+- falla con un mensaje claro si falta el secreto `NPM_TOKEN`.
 
 ---
 

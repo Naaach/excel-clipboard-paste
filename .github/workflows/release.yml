@@ -1,0 +1,83 @@
+name: Release
+
+# Publica en npm cuando se empuja un tag de versión (v1.2.3) y crea la release
+# en GitHub. También se puede lanzar a mano desde la pestaña Actions.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+# publicaciones simultáneas en cola, nunca en paralelo
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # crear la release en GitHub
+  id-token: write # firma de provenance de npm (npm publish --provenance)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # npm la lee a través del .npmrc que genera setup-node con registry-url.
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # La versión de pnpm sale de "packageManager" en package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Comprobar el secreto NPM_TOKEN
+        if: env.NODE_AUTH_TOKEN == ''
+        run: |
+          echo "::error::Falta el secreto NPM_TOKEN. Añádelo en Settings → Secrets and variables → Actions (token de tipo Automation de npmjs.com)."
+          exit 1
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificar que el tag coincide con package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v${VERSION}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::El tag ${GITHUB_REF_NAME} no coincide con la versión ${VERSION} de package.json"
+            exit 1
+          fi
+
+      - name: Comprobaciones (typecheck + test + build + size)
+        run: |
+          pnpm typecheck
+          pnpm test
+          pnpm build
+          pnpm size
+
+      - name: Comprobar si la versión ya está publicada
+        id: published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "La versión ${VERSION} ya está publicada; se omite npm publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar en npm
+        if: steps.published.outputs.exists != 'true'
+        run: npm publish --access public --provenance
+
+      - name: Crear la release en GitHub
+        if: steps.published.outputs.exists != 'true' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

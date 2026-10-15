@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y
 ## [Unreleased]
 
 ### Added
+- Pipeline de publicación en npm (`.github/workflows/release.yml`): se dispara con un
+  tag `vX.Y.Z`, corre `typecheck + test + build + size`, publica con `--provenance`
+  y crea la release en GitHub. Idempotente (no republish una versión ya publicada).
 - `parseHtmlTable` ahora expande `colspan`/`rowspan` de forma robusta: los huecos
   provocados por filas más cortas ya no pierden ni desplazan valores, las tablas
   anidadas se ignoran y `<br>` dentro de una celda se convierte en salto de línea.
