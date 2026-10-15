@@ -1,0 +1,4 @@
+# Single-package repo, but pnpm >= 10 reads settings from this file.
+# esbuild ships a native binary via a postinstall script, so its build is allowed.
+allowBuilds:
+  esbuild: true

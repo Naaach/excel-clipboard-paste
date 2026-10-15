@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Pega un rango de Excel o Google Sheets y conviértelo en una matriz. Demo interactiva de excel-clipboard-paste."
+    />
+    <title>excel-clipboard-paste · playground</title>
+    <link rel="stylesheet" href="./playground.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">▦</span>
+        <div class="brand-text">
+          <strong>excel-clipboard-paste</strong>
+          <span>convertir un pegado de Excel / Sheets en una matriz</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge">0 deps</span>
+        <span class="badge">TypeScript</span>
+        <span class="badge">ESM + CJS</span>
+        <button id="theme-toggle" class="icon-button" type="button" title="Cambiar tema">
+          <span data-theme-label>Auto</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel input-panel">
+        <div class="panel-head">
+          <h2>1 · Pega aquí</h2>
+          <p class="muted">Copia un rango en Excel o Google Sheets (Ctrl/Cmd + C) y pégalo (Ctrl/Cmd + V).</p>
+        </div>
+
+        <div class="samples" role="group" aria-label="Ejemplos">
+          <span class="samples-label">Ejemplos:</span>
+          <!-- botones inyectados por main.ts -->
+        </div>
+
+        <div class="paste-wrap">
+          <textarea
+            id="paste-area"
+            class="paste-area"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Haz clic aquí y pega, o escribe texto separado por tabuladores…"
+          ></textarea>
+          <div class="drop-hint" id="drop-hint">Suelta un .tsv, .csv o .txt aquí</div>
+        </div>
+
+        <div class="input-actions">
+          <button id="clear" class="ghost-button" type="button">Limpiar</button>
+          <label class="ghost-button file-button">
+            <input id="file-input" type="file" accept=".tsv,.csv,.txt,text/*" hidden />
+            Abrir archivo
+          </label>
+          <span id="source-badge" class="source-badge" hidden>origen: text/html</span>
+        </div>
+
+        <fieldset class="options">
+          <legend>2 · Opciones del parser</legend>
+          <label class="switch">
+            <input type="checkbox" id="opt-trim" checked />
+            <span><code>trim</code> recortar espacios</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="opt-drop-rows" checked />
+            <span><code>dropEmptyRows</code> filas vacías</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="opt-drop-cols" />
+            <span><code>dropEmptyColumns</code> columnas vacías</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="opt-rect" checked />
+            <span><code>rectangular</code> rellenar hasta el ancho</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="opt-html" />
+            <span><code>preferHtml</code> usar la tabla HTML</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="opt-coerce" />
+            <span><code>coerce</code> inferir números/booleanos</span>
+          </label>
+        </fieldset>
+      </section>
+
+      <section class="panel output-panel">
+        <div class="panel-head">
+          <h2>3 · Resultado</h2>
+          <p id="stats" class="muted">Aún no hay datos.</p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Formatos de salida">
+          <button class="tab is-active" data-tab="grid" role="tab">Grid</button>
+          <button class="tab" data-tab="json" role="tab">JSON</button>
+          <button class="tab" data-tab="csv" role="tab">CSV</button>
+          <button class="tab" data-tab="tsv" role="tab">TSV</button>
+          <button class="tab" data-tab="markdown" role="tab">Markdown</button>
+        </div>
+
+        <div class="output-body">
+          <div id="view-grid" class="view" data-view="grid" role="tabpanel">
+            <div class="grid-scroll"><div id="grid" class="grid-empty">Pega datos para ver el grid.</div></div>
+          </div>
+          <div id="view-code" class="view" data-view="code" hidden>
+            <pre id="code" class="code"><code>—</code></pre>
+          </div>
+        </div>
+
+        <div class="output-actions">
+          <button id="copy" class="primary-button" type="button">Copiar salida</button>
+          <span id="copy-feedback" class="copy-feedback" role="status" aria-live="polite"></span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>El parser vive en <code>src/</code> · esta web solo lo consume.</span>
+      <span id="file-meta" class="muted"></span>
+    </footer>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
