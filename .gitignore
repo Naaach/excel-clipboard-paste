@@ -3,6 +3,11 @@ dist/
 dist-demo/
 coverage/
 *.log
+*.tgz
 .DS_Store
+Thumbs.db
+desktop.ini
 .vite/
+.vscode/
+.idea/
 *.tsbuildinfo

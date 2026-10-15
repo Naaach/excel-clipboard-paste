@@ -10,8 +10,9 @@ import {
   toTSV,
   type CellValue,
   type Matrix,
+  type ParseOptions,
 } from "../src/index.js";
-import { parseCsv } from "./csv.js";
+import { detectDelimiter, parseCsv } from "./csv.js";
 import { samples } from "./samples.js";
 
 /** Hard cap so pasting a giant range never locks up the DOM. */
@@ -19,11 +20,9 @@ const MAX_GRID_ROWS = 500;
 
 type TabId = "grid" | "json" | "csv" | "tsv" | "markdown";
 
-interface UiOptions {
-  trim: boolean;
-  dropEmptyRows: boolean;
-  dropEmptyColumns: boolean;
-  rectangular: boolean;
+type SourceKind = "text" | "html" | "file";
+
+interface UiOptions extends ParseOptions {
   preferHtml: boolean;
   coerce: boolean;
 }
@@ -37,22 +36,31 @@ function byId<T extends HTMLElement>(id: string): T {
 const pasteArea = byId<HTMLTextAreaElement>("paste-area");
 const statsEl = byId<HTMLParagraphElement>("stats");
 const gridEl = byId<HTMLDivElement>("grid");
-const viewGrid = byId<HTMLDivElement>("view-grid");
-const viewCode = byId<HTMLDivElement>("view-code");
-const codeEl = byId<HTMLElement>("code");
+const panelGrid = byId<HTMLDivElement>("panel-grid");
+const panelCode = byId<HTMLDivElement>("panel-code");
+const codeEl = byId<HTMLElement>("code").querySelector<HTMLElement>("code") ?? byId<HTMLElement>("code");
 const copyButton = byId<HTMLButtonElement>("copy");
 const copyFeedback = byId<HTMLSpanElement>("copy-feedback");
 const clearButton = byId<HTMLButtonElement>("clear");
+const fileButton = byId<HTMLButtonElement>("file-button");
 const fileInput = byId<HTMLInputElement>("file-input");
 const fileMeta = byId<HTMLSpanElement>("file-meta");
 const sourceBadge = byId<HTMLSpanElement>("source-badge");
 const themeToggle = byId<HTMLButtonElement>("theme-toggle");
+const tablist = document.querySelector<HTMLDivElement>(".tabs");
 const samplesContainer = document.querySelector<HTMLDivElement>(".samples");
+const dropHint = byId<HTMLDivElement>("drop-hint");
 
 let lastHtml = "";
 let pendingHtml: string | null = null;
 let activeTab: TabId = "grid";
-let currentMatrix: Matrix = [];
+let matrix: Matrix = [];
+let sourceKind: SourceKind = "text";
+let currentOutput = "";
+/** When a file was opened, its text is re-parsed as CSV instead of as TSV. */
+let fileSource: { name: string; text: string; delimiter: string } | null = null;
+let copyTimer = 0;
+let renderScheduled = false;
 
 function checkbox(id: string): boolean {
   return byId<HTMLInputElement>(id).checked;
@@ -69,12 +77,18 @@ function readOptions(): UiOptions {
   };
 }
 
-function computeMatrix(text: string, html: string, options: UiOptions): Matrix {
-  if (options.preferHtml && html) {
-    const fromHtml = parseHtmlTable(html, options);
-    if (fromHtml.length > 0) return fromHtml;
+function compute(): { matrix: Matrix; source: SourceKind } {
+  const options = readOptions();
+
+  if (fileSource) {
+    return { matrix: parseCsv(fileSource.text, fileSource.delimiter), source: "file" };
   }
-  return parseClipboardText(text, options);
+
+  if (options.preferHtml && lastHtml) {
+    return { matrix: parseHtmlTable(lastHtml, options), source: "html" };
+  }
+
+  return { matrix: parseClipboardText(pasteArea.value, options), source: "text" };
 }
 
 function columnLabel(index: number): string {
@@ -95,24 +109,34 @@ function typeClass(value: CellValue, coerced: boolean): string {
   return "cell-text";
 }
 
-function renderGrid(matrix: Matrix, options: UiOptions): void {
+function cellNode(tag: "th" | "td", text: string, className: string): HTMLTableCellElement {
+  const node = document.createElement(tag);
+  node.textContent = text;
+  node.className = className;
+  return node;
+}
+
+function renderGrid(data: Matrix, options: UiOptions): void {
   gridEl.replaceChildren();
 
-  if (matrix.length === 0) {
+  if (data.length === 0) {
     gridEl.className = "grid-empty";
     gridEl.textContent = "Pega datos para ver el grid.";
     return;
   }
 
   gridEl.className = "grid";
-  const width = matrix.reduce((max, row) => Math.max(max, row.length), 0);
-  const display: CellValue[][] = options.coerce ? coerceMatrix(matrix, { nulls: true }) : matrix;
-  const visibleRows = display.slice(0, MAX_GRID_ROWS);
+  const width = data.reduce((max, row) => Math.max(max, row.length), 0);
+
+  // Slice BEFORE coercing so a huge paste does not coerce every row.
+  const visible = data.slice(0, MAX_GRID_ROWS);
+  const display: CellValue[][] = options.coerce
+    ? coerceMatrix(visible, { nulls: true })
+    : visible;
 
   const table = document.createElement("table");
   table.className = "data-grid";
 
-  // Header row with column letters (A, B, C…) and a leading corner cell.
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
   headRow.append(cellNode("th", "#", "grid-corner"));
@@ -123,13 +147,14 @@ function renderGrid(matrix: Matrix, options: UiOptions): void {
   table.append(thead);
 
   const tbody = document.createElement("tbody");
-  visibleRows.forEach((row, rowIndex) => {
+  display.forEach((row, rowIndex) => {
     const tr = document.createElement("tr");
     tr.append(cellNode("th", String(rowIndex + 1), "grid-row-head"));
     for (let column = 0; column < width; column += 1) {
-      const value = row[column] ?? "";
-      const td = cellNode("td", String(value), typeClass(value, options.coerce));
-      if (value === "") td.classList.add("cell-empty");
+      const value = row[column] ?? null;
+      const text = value === null ? "" : String(value);
+      const td = cellNode("td", text, typeClass(value, options.coerce));
+      if (text === "") td.classList.add("cell-empty");
       tr.append(td);
     }
     tbody.append(tr);
@@ -137,55 +162,50 @@ function renderGrid(matrix: Matrix, options: UiOptions): void {
   table.append(tbody);
   gridEl.append(table);
 
-  if (display.length > MAX_GRID_ROWS) {
+  if (data.length > MAX_GRID_ROWS) {
     const note = document.createElement("p");
     note.className = "grid-note";
-    note.textContent = `Mostrando ${MAX_GRID_ROWS} de ${display.length} filas (la salida de texto incluye todas).`;
+    note.textContent = `Mostrando ${MAX_GRID_ROWS} de ${data.length} filas (la salida de texto incluye todas).`;
     gridEl.append(note);
   }
 }
 
-function cellNode(tag: "th" | "td", text: string, className: string): HTMLTableCellElement {
-  const node = document.createElement(tag);
-  node.textContent = text;
-  node.className = className;
-  return node;
-}
-
-function codeForTab(tab: TabId, matrix: Matrix): string {
+function codeForTab(tab: TabId, data: Matrix, options: UiOptions): string {
   switch (tab) {
     case "json":
-      return toJSON(matrix, { pretty: true });
+      // Coercion applies here too, so JSON mirrors what the grid shows.
+      return toJSON(options.coerce ? coerceMatrix(data, { nulls: true }) : data, { pretty: true });
     case "csv":
-      return toCSV(matrix);
+      return toCSV(data);
     case "tsv":
-      return toTSV(matrix);
+      return toTSV(data);
     case "markdown":
-      return toMarkdownTable(matrix);
+      return toMarkdownTable(data);
     case "grid":
     default:
-      return toTSV(matrix);
+      return toTSV(data);
   }
 }
 
-function renderCode(matrix: Matrix): void {
-  const content = codeForTab(activeTab, matrix);
-  codeEl.textContent = content.length > 0 ? content : "—";
-}
-
-function setActiveTab(tab: TabId): void {
+function setActiveTab(tab: TabId, options: { focus?: boolean } = {}): void {
   activeTab = tab;
   for (const button of document.querySelectorAll<HTMLButtonElement>(".tab")) {
-    button.classList.toggle("is-active", button.dataset.tab === tab);
+    const isActive = button.dataset.tab === tab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+    if (isActive && options.focus) button.focus();
   }
   const isGrid = tab === "grid";
-  viewGrid.hidden = !isGrid;
-  viewCode.hidden = isGrid;
-  renderCode(currentMatrix);
+  panelGrid.hidden = !isGrid;
+  panelCode.hidden = isGrid;
+  // The single code panel is labelled by whichever tab is active.
+  panelCode.setAttribute("aria-labelledby", `tab-${tab}`);
+  render();
 }
 
-function updateStats(matrix: Matrix): void {
-  const stats = matrixStats(matrix);
+function updateStats(data: Matrix): void {
+  const stats = matrixStats(data);
   if (stats.rows === 0) {
     statsEl.textContent = "Aún no hay datos.";
     return;
@@ -199,13 +219,38 @@ function updateStats(matrix: Matrix): void {
   statsEl.textContent = bits.join(" · ");
 }
 
+function updateSourceBadge(): void {
+  const label =
+    sourceKind === "html" ? "origen: text/html" : sourceKind === "file" ? "origen: archivo" : "";
+  sourceBadge.textContent = label;
+  sourceBadge.hidden = label === "";
+}
+
 function render(): void {
   const options = readOptions();
-  currentMatrix = computeMatrix(pasteArea.value, lastHtml, options);
-  updateStats(currentMatrix);
-  renderGrid(currentMatrix, options);
-  renderCode(currentMatrix);
-  sourceBadge.hidden = !(options.preferHtml && lastHtml);
+  const result = compute();
+  matrix = result.matrix;
+  sourceKind = result.source;
+
+  updateStats(matrix);
+  renderGrid(matrix, options);
+
+  currentOutput = codeForTab(activeTab, matrix, options);
+  codeEl.textContent = currentOutput.length > 0 ? currentOutput : "—";
+
+  updateSourceBadge();
+  copyButton.textContent = activeTab === "grid" ? "Copiar TSV" : "Copiar salida";
+  copyButton.disabled = currentOutput.length === 0;
+}
+
+/** Coalesce bursts of input events (one render per animation frame). */
+function scheduleRender(): void {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    render();
+  });
 }
 
 /* ------------------------------- events -------------------------------- */
@@ -219,72 +264,120 @@ pasteArea.addEventListener("input", () => {
   if (pendingHtml !== null) {
     lastHtml = pendingHtml;
     pendingHtml = null;
+    fileSource = null;
+    fileMeta.textContent = "";
+  } else if (fileSource) {
+    // Keep re-interpreting the imported file while the user edits it.
+    fileSource.text = pasteArea.value;
+    fileSource.delimiter = detectDelimiter(pasteArea.value);
   } else {
     lastHtml = "";
   }
-  render();
+  scheduleRender();
 });
 
 for (const option of document.querySelectorAll<HTMLInputElement>(".options input")) {
-  option.addEventListener("change", render);
+  option.addEventListener("change", scheduleRender);
 }
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(".tab")) {
   button.addEventListener("click", () => setActiveTab((button.dataset.tab as TabId) ?? "grid"));
 }
 
-copyButton.addEventListener("click", async () => {
-  const text = codeForTab(activeTab, currentMatrix);
-  try {
-    await navigator.clipboard.writeText(text);
-    copyFeedback.textContent = "¡Copiado!";
-  } catch {
-    copyFeedback.textContent = "No se pudo copiar";
-  }
-  window.setTimeout(() => {
+tablist?.addEventListener("keydown", (event) => {
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab"));
+  const index = tabs.findIndex((tab) => tab.dataset.tab === activeTab);
+  if (index < 0) return;
+  const keys: Record<string, number> = {
+    ArrowRight: (index + 1) % tabs.length,
+    ArrowLeft: (index - 1 + tabs.length) % tabs.length,
+    Home: 0,
+    End: tabs.length - 1,
+  };
+  const next = keys[event.key];
+  if (next === undefined) return;
+  event.preventDefault();
+  const id = tabs[next]?.dataset.tab as TabId | undefined;
+  if (id) setActiveTab(id, { focus: true });
+});
+
+function showFeedback(message: string): void {
+  copyFeedback.textContent = message;
+  if (copyTimer) window.clearTimeout(copyTimer);
+  copyTimer = window.setTimeout(() => {
     copyFeedback.textContent = "";
   }, 1600);
+}
+
+copyButton.addEventListener("click", async () => {
+  if (currentOutput.length === 0) return;
+  try {
+    await navigator.clipboard.writeText(currentOutput);
+    showFeedback("¡Copiado!");
+  } catch {
+    showFeedback("No se pudo copiar");
+  }
 });
+
+function clearSource(kind: "sample" | "manual"): void {
+  lastHtml = "";
+  pendingHtml = null;
+  fileSource = null;
+  fileMeta.textContent = kind === "manual" ? "" : fileMeta.textContent;
+}
 
 clearButton.addEventListener("click", () => {
   pasteArea.value = "";
-  lastHtml = "";
-  fileMeta.textContent = "";
+  clearSource("manual");
   render();
   pasteArea.focus();
 });
 
-function loadTextAsTsv(text: string, name: string): void {
-  const isCsv = name.toLowerCase().endsWith(".csv");
-  // CSV files are normalized to TSV so the rest of the pipeline stays simple.
-  pasteArea.value = isCsv ? toTSV(parseCsv(text)) : text;
-  lastHtml = "";
-  fileMeta.textContent = name;
-  render();
+fileButton.addEventListener("click", () => fileInput.click());
+
+async function loadFile(file: File): Promise<void> {
+  try {
+    const text = await file.text();
+    const delimiter = detectDelimiter(text);
+    fileSource = { name: file.name, text, delimiter };
+    pasteArea.value = text;
+    lastHtml = "";
+    pendingHtml = null;
+    fileMeta.textContent = `${file.name} · delimitador "${delimiter === "\t" ? "\\t" : delimiter}"`;
+    render();
+  } catch {
+    fileMeta.textContent = `No se pudo leer ${file.name}`;
+  }
 }
 
-fileInput.addEventListener("change", async () => {
+fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
-  if (!file) return;
-  loadTextAsTsv(await file.text(), file.name);
   fileInput.value = "";
+  if (file) void loadFile(file);
 });
 
 function setupDropZone(): void {
-  const zone = byId<HTMLDivElement>("drop-hint");
   const wrap = pasteArea.parentElement;
   if (!wrap) return;
 
+  // Only take over drags that actually carry files, so normal text drag-and-drop
+  // into the textarea keeps working.
+  const hasFiles = (event: DragEvent): boolean => event.dataTransfer?.types.includes("Files") ?? false;
+
   wrap.addEventListener("dragover", (event) => {
+    if (!hasFiles(event)) return;
     event.preventDefault();
-    zone.classList.add("is-active");
+    dropHint.classList.add("is-active");
   });
-  wrap.addEventListener("dragleave", () => zone.classList.remove("is-active"));
-  wrap.addEventListener("drop", async (event) => {
+  wrap.addEventListener("dragleave", (event) => {
+    if (event.target === wrap) dropHint.classList.remove("is-active");
+  });
+  wrap.addEventListener("drop", (event) => {
+    if (!hasFiles(event)) return;
     event.preventDefault();
-    zone.classList.remove("is-active");
+    dropHint.classList.remove("is-active");
     const file = event.dataTransfer?.files?.[0];
-    if (file) loadTextAsTsv(await file.text(), file.name);
+    if (file) void loadFile(file);
   });
 }
 
@@ -300,7 +393,7 @@ function renderSamples(): void {
     button.title = sample.hint;
     button.addEventListener("click", () => {
       pasteArea.value = sample.text;
-      lastHtml = "";
+      clearSource("sample");
       fileMeta.textContent = "";
       render();
     });

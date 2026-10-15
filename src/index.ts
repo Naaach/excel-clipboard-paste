@@ -14,9 +14,11 @@ export type {
   MatrixStats,
   ParseClipboardOptions,
   ParseOptions,
+  ToObjectsOptions,
 } from "./types.js";
 
 export {
+  hasHtmlTable,
   parseClipboard,
   parseClipboardText,
   parseHtmlTable,
@@ -39,6 +41,7 @@ export {
   toCSV,
   toJSON,
   toMarkdownTable,
+  toObjects,
   toTSV,
   transposeMatrix,
 } from "./matrix.js";

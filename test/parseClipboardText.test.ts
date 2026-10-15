@@ -46,6 +46,17 @@ describe("parseClipboardText", () => {
     expect(parseClipboardText("A\tB\n\n\n")).toEqual([["A", "B"]]);
   });
 
+  it("preserves interior blank rows (they may be meaningful)", () => {
+    expect(parseClipboardText("A\n\nB")).toEqual([["A"], [""], ["B"]]);
+  });
+
+  it("ignores a leading byte-order mark", () => {
+    expect(parseClipboardText("\uFEFFNombre\tEdad\nAna\t25")).toEqual([
+      ["Nombre", "Edad"],
+      ["Ana", "25"],
+    ]);
+  });
+
   it("preserves whitespace by default", () => {
     expect(parseClipboardText("  Ana \t 25 ")).toEqual([["  Ana ", " 25 "]]);
   });
@@ -63,6 +74,31 @@ describe("parseClipboardText", () => {
 
   it("caps rows with maxRows", () => {
     expect(parseClipboardText("1\n2\n3", { maxRows: 2 })).toEqual([["1"], ["2"]]);
+  });
+
+  it("applies maxRows after the other options", () => {
+    // "b" must survive: dropping the blank row happens before the cap.
+    expect(parseClipboardText("a\n\nb", { maxRows: 2, dropEmptyRows: true })).toEqual([
+      ["a"],
+      ["b"],
+    ]);
+  });
+
+  it("handles maxRows edge values", () => {
+    expect(parseClipboardText("1\n2\n3", { maxRows: 0 })).toEqual([]);
+    expect(parseClipboardText("1\n2\n3", { maxRows: 1.9 })).toEqual([["1"]]);
+    expect(parseClipboardText("1\n2\n3", { maxRows: -1 })).toEqual([]);
+    expect(parseClipboardText("1\n2\n3", { maxRows: Number.POSITIVE_INFINITY })).toEqual([
+      ["1"],
+      ["2"],
+      ["3"],
+    ]);
+    // Invalid values simply disable the cap.
+    expect(parseClipboardText("1\n2\n3", { maxRows: Number.NaN })).toEqual([
+      ["1"],
+      ["2"],
+      ["3"],
+    ]);
   });
 
   it("pads rows to a rectangle when requested", () => {

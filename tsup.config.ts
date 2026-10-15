@@ -6,7 +6,8 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  minify: true,
+  // The bundle is tiny; minifying hurts debuggability for no real win.
+  minify: false,
   target: "es2021",
   treeshake: true,
   outExtension({ format }) {

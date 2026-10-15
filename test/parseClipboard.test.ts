@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { parseClipboard, parseHtmlTable, parsePasteEvent } from "../src/index.js";
+import { parseClipboard, parsePasteEvent, readClipboardData } from "../src/index.js";
 
 /** Build a fake ClipboardEvent good enough for the parser. */
-function fakePasteEvent(flavors: { text?: string; html?: string }) {
+function fakePasteEvent(flavors: { text?: string; html?: string; getDataThrows?: boolean }) {
   return {
     clipboardData: {
       getData(type: string) {
+        if (flavors.getDataThrows) throw new Error("SecurityError");
         if (type === "text/plain") return flavors.text ?? "";
         if (type === "text/html") return flavors.html ?? "";
         return "";
@@ -46,6 +47,16 @@ describe("parseClipboard", () => {
     expect(parseClipboard(event, { preferHtml: true })).toEqual([["A", "B"]]);
   });
 
+  it("does not fall back to text when a table exists but options empty it", () => {
+    const event = fakePasteEvent({
+      text: "REALTEXT",
+      html: "<table><tr><td>   </td></tr></table>",
+    });
+    expect(parseClipboard(event, { preferHtml: true, trim: true, dropEmptyRows: true })).toEqual(
+      [],
+    );
+  });
+
   it("applies structural options on the HTML path too", () => {
     const event = fakePasteEvent({ html: HTML_TABLE });
     expect(parseClipboard(event, { preferHtml: true, dropEmptyRows: true, maxRows: 2 })).toEqual([
@@ -56,38 +67,45 @@ describe("parseClipboard", () => {
 
   it("returns [] when the event is missing", () => {
     expect(parseClipboard(undefined)).toEqual([]);
+    expect(parseClipboard(null)).toEqual([]);
   });
 
-  it("exposes parsePasteEvent as an alias", () => {
+  it("works with a clipboardData that has no getData", () => {
+    const event = { clipboardData: {} } as unknown as ClipboardEvent;
+    expect(parseClipboard(event)).toEqual([]);
+  });
+
+  it("exposes parsePasteEvent as an alias that behaves identically", () => {
     expect(parsePasteEvent).toBe(parseClipboard);
+    const event = fakePasteEvent({ text: "A\tB" });
+    expect(parsePasteEvent(event, { trim: true })).toEqual([["A", "B"]]);
   });
 });
 
-describe("parseHtmlTable", () => {
-  it("expands colspan so columns stay aligned", () => {
-    const html = `<table>
-      <tr><td colspan="2">Total</td><td>X</td></tr>
-      <tr><td>1</td><td>2</td><td>3</td></tr>
-    </table>`;
-    expect(parseHtmlTable(html)).toEqual([
-      ["Total", "", "X"],
-      ["1", "2", "3"],
-    ]);
+describe("readClipboardData", () => {
+  it("reads both flavors", () => {
+    const event = fakePasteEvent({ text: "A\tB", html: "<table></table>" });
+    expect(readClipboardData(event)).toEqual({ text: "A\tB", html: "<table></table>" });
   });
 
-  it("carries rowspan values into following rows", () => {
-    const html = `<table>
-      <tr><td rowspan="2">A</td><td>B</td></tr>
-      <tr><td>C</td></tr>
-    </table>`;
-    expect(parseHtmlTable(html)).toEqual([
-      ["A", "B"],
-      ["A", "C"],
-    ]);
+  it("degrades to empty strings for missing or broken events", () => {
+    expect(readClipboardData(undefined)).toEqual({ text: "", html: "" });
+    expect(readClipboardData(null)).toEqual({ text: "", html: "" });
+    expect(readClipboardData({})).toEqual({ text: "", html: "" });
+    expect(readClipboardData({ clipboardData: {} })).toEqual({ text: "", html: "" });
+    expect(
+      readClipboardData({ clipboardData: { getData: () => undefined } }),
+    ).toEqual({ text: "", html: "" });
+    expect(readClipboardData({ clipboardData: { getData: () => 42 } })).toEqual({
+      text: "",
+      html: "",
+    });
   });
 
-  it("returns [] for empty input or missing table", () => {
-    expect(parseHtmlTable("")).toEqual([]);
-    expect(parseHtmlTable("<div>nope</div>")).toEqual([]);
+  it("survives a getData that throws", () => {
+    expect(readClipboardData(fakePasteEvent({ getDataThrows: true }))).toEqual({
+      text: "",
+      html: "",
+    });
   });
 });

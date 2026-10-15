@@ -5,6 +5,7 @@
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
+  "packageManager": "pnpm@12.11.2",
   "engines": {
     "node": ">=18"
   },
@@ -21,6 +22,16 @@
     "matrix",
     "table"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Naaach/excel-clipboard-paste.git"
+  },
+  "homepage": "https://github.com/Naaach/excel-clipboard-paste#readme",
+  "bugs": "https://github.com/Naaach/excel-clipboard-paste/issues",
+  "author": {
+    "name": "Naaach",
+    "url": "https://github.com/Naaach"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,7 +39,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -45,7 +57,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run test"
+    "size": "node scripts/size.mjs",
+    "prepublishOnly": "pnpm typecheck && pnpm build && pnpm test"
   },
   "devDependencies": {
     "jsdom": "^26.1.0",

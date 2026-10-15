@@ -78,3 +78,12 @@ export interface CsvOptions {
    */
   quoteIfNeeded?: boolean;
 }
+
+/** Options for {@link toObjects}. */
+export interface ToObjectsOptions {
+  /**
+   * Header names to use instead of the matrix's first row. When provided, every
+   * row of the matrix is treated as data.
+   */
+  headers?: string[];
+}

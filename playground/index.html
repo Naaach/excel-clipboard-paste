@@ -15,25 +15,27 @@
       <div class="brand">
         <span class="brand-mark" aria-hidden="true">▦</span>
         <div class="brand-text">
-          <strong>excel-clipboard-paste</strong>
-          <span>convertir un pegado de Excel / Sheets en una matriz</span>
+          <h1 class="brand-title">excel-clipboard-paste</h1>
+          <p class="brand-subtitle">convertir un pegado de Excel / Sheets en una matriz</p>
         </div>
       </div>
       <div class="topbar-actions">
         <span class="badge">0 deps</span>
         <span class="badge">TypeScript</span>
         <span class="badge">ESM + CJS</span>
-        <button id="theme-toggle" class="icon-button" type="button" title="Cambiar tema">
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="Cambiar tema">
           <span data-theme-label>Auto</span>
         </button>
       </div>
     </header>
 
     <main class="layout">
-      <section class="panel input-panel">
+      <section class="panel input-panel" aria-labelledby="input-heading">
         <div class="panel-head">
-          <h2>1 · Pega aquí</h2>
-          <p class="muted">Copia un rango en Excel o Google Sheets (Ctrl/Cmd + C) y pégalo (Ctrl/Cmd + V).</p>
+          <h2 id="input-heading">1 · Pega aquí</h2>
+          <p class="muted">
+            Copia un rango en Excel o Google Sheets (Ctrl/Cmd + C) y pégalo (Ctrl/Cmd + V).
+          </p>
         </div>
 
         <div class="samples" role="group" aria-label="Ejemplos">
@@ -42,6 +44,7 @@
         </div>
 
         <div class="paste-wrap">
+          <label class="visually-hidden" for="paste-area">Área de pegado</label>
           <textarea
             id="paste-area"
             class="paste-area"
@@ -49,15 +52,13 @@
             autocomplete="off"
             placeholder="Haz clic aquí y pega, o escribe texto separado por tabuladores…"
           ></textarea>
-          <div class="drop-hint" id="drop-hint">Suelta un .tsv, .csv o .txt aquí</div>
+          <div class="drop-hint" id="drop-hint" aria-hidden="true">Suelta un .tsv, .csv o .txt aquí</div>
         </div>
 
         <div class="input-actions">
           <button id="clear" class="ghost-button" type="button">Limpiar</button>
-          <label class="ghost-button file-button">
-            <input id="file-input" type="file" accept=".tsv,.csv,.txt,text/*" hidden />
-            Abrir archivo
-          </label>
+          <button id="file-button" class="ghost-button" type="button">Abrir archivo</button>
+          <input id="file-input" type="file" accept=".tsv,.csv,.txt,text/*" hidden />
           <span id="source-badge" class="source-badge" hidden>origen: text/html</span>
         </div>
 
@@ -85,30 +86,30 @@
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-coerce" />
-            <span><code>coerce</code> inferir números/booleanos</span>
+            <span><code>coerce</code> números/booleanos (grid y JSON)</span>
           </label>
         </fieldset>
       </section>
 
-      <section class="panel output-panel">
+      <section class="panel output-panel" aria-labelledby="output-heading">
         <div class="panel-head">
-          <h2>3 · Resultado</h2>
-          <p id="stats" class="muted">Aún no hay datos.</p>
+          <h2 id="output-heading">3 · Resultado</h2>
+          <p id="stats" class="muted" role="status" aria-live="polite">Aún no hay datos.</p>
         </div>
 
         <div class="tabs" role="tablist" aria-label="Formatos de salida">
-          <button class="tab is-active" data-tab="grid" role="tab">Grid</button>
-          <button class="tab" data-tab="json" role="tab">JSON</button>
-          <button class="tab" data-tab="csv" role="tab">CSV</button>
-          <button class="tab" data-tab="tsv" role="tab">TSV</button>
-          <button class="tab" data-tab="markdown" role="tab">Markdown</button>
+          <button class="tab is-active" id="tab-grid" data-tab="grid" role="tab" aria-selected="true" aria-controls="panel-grid" tabindex="0">Grid</button>
+          <button class="tab" id="tab-json" data-tab="json" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">JSON</button>
+          <button class="tab" id="tab-csv" data-tab="csv" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">CSV</button>
+          <button class="tab" id="tab-tsv" data-tab="tsv" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">TSV</button>
+          <button class="tab" id="tab-markdown" data-tab="markdown" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">Markdown</button>
         </div>
 
         <div class="output-body">
-          <div id="view-grid" class="view" data-view="grid" role="tabpanel">
+          <div id="panel-grid" class="view" role="tabpanel" aria-labelledby="tab-grid" tabindex="0">
             <div class="grid-scroll"><div id="grid" class="grid-empty">Pega datos para ver el grid.</div></div>
           </div>
-          <div id="view-code" class="view" data-view="code" hidden>
+          <div id="panel-code" class="view" role="tabpanel" aria-labelledby="tab-code-dynamic" tabindex="0" hidden>
             <pre id="code" class="code"><code>—</code></pre>
           </div>
         </div>

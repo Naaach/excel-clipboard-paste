@@ -1,5 +1,7 @@
 # excel-clipboard-paste
 
+[![CI](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml)
+
 > Convierte lo que pegas desde **Excel** o **Google Sheets** en una matriz limpia de filas y columnas.
 > Cero dependencias · TypeScript · ESM + CJS · funciona en el navegador y en Node.
 
@@ -56,10 +58,10 @@ parseClipboardText("Ana\t25\nLuis\t31");
 // [["Ana", "25"], ["Luis", "31"]]
 ```
 
-### 3. Preferir la tabla HTML (colores/estructura de origen)
+### 3. Preferir la tabla HTML (estructura de origen)
 
 Algunas aplicaciones incluyen además una versión `text/html` con una `<table>` real.
-Puedes preferirla y caer automáticamente al texto si no existe:
+Puedes preferirla y caer automáticamente al texto solo si **no** hay tabla:
 
 ```ts
 const rows = parseClipboard(event, { preferHtml: true });
@@ -74,8 +76,9 @@ const rows = parseClipboard(event, { preferHtml: true });
 | Función | Descripción |
 |---|---|
 | `parseClipboard(event, options?)` | Lee un `ClipboardEvent` y devuelve `string[][]`. Opción `preferHtml`. |
-| `parseClipboardText(text, options?)` | Convierte texto ya obtenido en matriz. |
+| `parseClipboardText(text, options?)` | Convierte texto ya obtenido en matriz (ignora el BOM inicial). |
 | `parseHtmlTable(html, options?)` | Extrae y expande una `<table>` de `text/html`. |
+| `hasHtmlTable(html)` | `true` si el HTML contiene una tabla, sin parsearlo. |
 | `readClipboardData(event)` | Devuelve `{ text, html }` sin efectos secundarios. |
 | `parsePasteEvent` | Alias de `parseClipboard` (compatibilidad). *Deprecado.* |
 
@@ -87,7 +90,7 @@ const rows = parseClipboard(event, { preferHtml: true });
 | `dropEmptyRows` | `false` | Elimina filas con todas las celdas vacías. |
 | `dropEmptyColumns` | `false` | Elimina columnas vacías en todas las filas. |
 | `rectangular` | `false` | Rellena las filas cortas con `""` hasta el ancho máximo. |
-| `maxRows` | `Infinity` | Limita el número de filas. |
+| `maxRows` | `Infinity` | Limita el número de filas **del resultado** (se aplica al final). |
 | `preferHtml` | `false` | (solo `parseClipboard`) usa la tabla HTML si existe. |
 
 ### Utilidades de matriz
@@ -99,36 +102,46 @@ import {
   transposeMatrix,  // gira filas/columnas
   removeEmptyRows,  // quita filas vacías
   removeEmptyColumns,
-  getHeaderRow,     // primera fila
+  getHeaderRow,     // primera fila (copia defensiva)
   dropHeaderRow,    // sin la primera fila
   isEmptyMatrix,
   cloneMatrix,
   mapCells,
   coerceMatrix,     // "25" -> 25, "true" -> true (opt-in)
   coerceCell,
+  toObjects,        // [["Nombre","Edad"],["Ana","25"]] -> [{ Nombre: "Ana", Edad: "25" }]
 } from "excel-clipboard-paste";
 ```
+
+`coerceCell` solo elimina comas cuando forman grupos de miles consistentes
+(`1,234` → `1234`), de modo que un decimal europeo como `1,5` **no** se convierte
+en `15`. Los ceros a la izquierda (`"007"`) sí se convierten en número; si eso te
+importa, no fuerces la coerción para esas columnas.
 
 ### Serializadores
 
 ```ts
 import { toCSV, toTSV, toMarkdownTable, toJSON } from "excel-clipboard-paste";
 
-toTSV([["A", "B"]]);          // "A\tB"        (ida y vuelta con el parser)
+toTSV([["A", "B"]]);          // "A\tB"
 toCSV([["a,b", 'x"y']]);      // "\"a,b\",\"x\"\"y\""
 toMarkdownTable([["A"], ["1"]]); // "| A |\n| --- |\n| 1 |"
-toJSON([["A"]]);              // pretty JSON
+toJSON([["A"]]);              // pretty JSON (acepta matrices forzadas con coerceMatrix)
 ```
+
+> `toTSV` es ida y vuelta con `parseClipboardText` **mientras ninguna celda contenga
+> tabuladores o saltos de línea**: en TSV esas celdas son ambiguas por definición.
 
 ---
 
 ## Cómo funciona
 
-1. Normaliza finales de línea de Windows (`\r\n`) y Mac clásico (`\r`) a `\n`.
+1. Normaliza finales de línea de Windows (`\r\n`) y Mac clásico (`\r`) a `\n` e ignora el BOM inicial.
 2. Quita **solo** los saltos de línea finales (pegar nunca debe añadir una fila fantasma),
    pero **conserva** los tabuladores finales, que representan celdas vacías finales.
 3. Divide en filas por `\n` y en celdas por `\t`.
-4. Aplica las opciones estructurales (`trim`, `dropEmpty*`, `rectangular`, `maxRows`).
+4. Aplica las opciones en orden: `trim` → `dropEmptyRows` → `dropEmptyColumns` →
+   `rectangular` → `maxRows`.
 
 La matriz resultante es **siempre `string[][]`**. La inferencia de números/booleanos
 es opt-in con `coerceMatrix`, para no alterar nunca lo que Excel envió.
@@ -144,9 +157,10 @@ pnpm install
 pnpm dev        # abre el playground en el navegador
 ```
 
-Permite pegar de verdad (o cargar un `.tsv`/`.csv`/`.txt`, o arrastrarlo),
-alternar las opciones del parser, ver el grid y copiar la salida como JSON, CSV,
-TSV o Markdown.
+Permite pegar de verdad (o abrir/arrastrar un `.tsv`, `.csv` o `.txt`, con
+**detección automática de delimitador**), alternar las opciones del parser, ver el
+grid y copiar la salida como JSON, CSV, TSV o Markdown. Tema claro/oscuro/auto,
+navegación de pestañas con teclado y render por `requestAnimationFrame`.
 
 ```bash
 pnpm build:demo # genera la web estática en dist-demo/
@@ -162,7 +176,11 @@ pnpm build:demo # genera la web estática en dist-demo/
 | `pnpm build` | Compila la librería a `dist/` (ESM + CJS + tipos) con tsup. |
 | `pnpm build:demo` | Compila el playground estático. |
 | `pnpm test` | Ejecuta las pruebas (Vitest + jsdom). |
+| `pnpm test:watch` | Pruebas en modo watch. |
 | `pnpm typecheck` | Comprueba tipos con `tsc --noEmit`. |
+| `pnpm size` | Falla si el bundle ESM supera el presupuesto (6 KB gzip). |
+
+Tamaño actual: **≈ 9.3 KB raw / ≈ 2.8 KB gzip** (ESM, sin minificar).
 
 ---
 
@@ -171,11 +189,14 @@ pnpm build:demo # genera la web estática en dist-demo/
 - **No** lee ni genera `.xlsx` / `.xls`. Solo portapapeles.
 - **No** interpreta estilos (negrita, color, alineación) aunque la tabla HTML los tenga.
 - **No** interpreta fechas, fórmulas ni formatos; eso lo decides tú con `coerceMatrix`.
-- `text/html`: se expande `colspan` y `rowspan` (el valor va en la primera celda y las
-  demás quedan vacías), pero no se interpretan atributos CSS.
+- `text/html`: se expande `colspan`/`rowspan` con los límites del estándar HTML
+  (colspan ≤ 1000, rowspan ≤ 65534). El valor de una celda fusionada va en la primera
+  casilla y el resto quedan vacíos. No se interpretan atributos CSS.
 - El parser de texto **no** entiende CSV con comillas ni saltos de línea dentro de una
   celda: eso es portapapeles de hoja de cálculo, no CSV. El playground sí trae un lector
-  de CSV mínimo para arrastrar archivos, pero no forma parte del núcleo.
+  de CSV mínimo (con comillas y detección de delimitador) para importar archivos,
+  pero no forma parte del núcleo.
+- `toTSV` pierde la ida y vuelta si una celda contiene `\t` o `\n` (límite del formato).
 
 Si algo de esto aparece en uso real, se añade con pruebas específicas antes de complicar
 el parser (ver `PLAN.md`).
@@ -185,7 +206,8 @@ el parser (ver `PLAN.md`).
 ## Roadmap
 
 Mira [`PLAN.md`](./PLAN.md) para el plan completo, las decisiones de diseño y las
-mejoras propuestas (adaptadores React/Vue, estilos HTML, etc.).
+mejoras propuestas (adaptadores React/Vue, estilos HTML, etc.). El historial de
+cambios vive en [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
