@@ -8,7 +8,7 @@
 > This file is the editable source of truth: check, uncheck and add things.
 
 **Name:** `excel-clipboard-paste` (the original plan called it `excel-paste`).
-**Status:** `0.1.0` published. Repo at `github.com/Naaach/excel-clipboard-paste`.
+**Status:** `0.1.1` published. Repo at `github.com/Naaach/excel-clipboard-paste`.
 **Changes:** see [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---

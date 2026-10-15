@@ -7,6 +7,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 Nothing yet.
 
+## [0.1.1] - 2026-10-15
+
+### Changed
+- Documentation (`README.md`, `PLAN.md`, `CHANGELOG.md`), playground UI strings,
+  samples, CI step names and script output translated to English.
+- No runtime code changes.
+
 ## [0.1.0] - 2026-10-15
 
 First version published to npm: `excel-clipboard-paste@0.1.0`.

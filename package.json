@@ -1,6 +1,6 @@
 {
   "name": "excel-clipboard-paste",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Parse clipboard data pasted from Excel or Google Sheets into a clean matrix. Zero dependencies, TypeScript, ESM + CJS.",
   "type": "module",
   "license": "MIT",
