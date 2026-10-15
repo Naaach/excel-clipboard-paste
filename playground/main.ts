@@ -121,7 +121,7 @@ function renderGrid(data: Matrix, options: UiOptions): void {
 
   if (data.length === 0) {
     gridEl.className = "grid-empty";
-    gridEl.textContent = "Pega datos para ver el grid.";
+    gridEl.textContent = "Paste some data to see the grid.";
     return;
   }
 
@@ -165,7 +165,7 @@ function renderGrid(data: Matrix, options: UiOptions): void {
   if (data.length > MAX_GRID_ROWS) {
     const note = document.createElement("p");
     note.className = "grid-note";
-    note.textContent = `Mostrando ${MAX_GRID_ROWS} de ${data.length} filas (la salida de texto incluye todas).`;
+    note.textContent = `Showing ${MAX_GRID_ROWS} of ${data.length} rows (the text output includes all of them).`;
     gridEl.append(note);
   }
 }
@@ -207,21 +207,21 @@ function setActiveTab(tab: TabId, options: { focus?: boolean } = {}): void {
 function updateStats(data: Matrix): void {
   const stats = matrixStats(data);
   if (stats.rows === 0) {
-    statsEl.textContent = "Aún no hay datos.";
+    statsEl.textContent = "No data yet.";
     return;
   }
   const bits = [
-    `${stats.rows} fila${stats.rows === 1 ? "" : "s"}`,
-    `${stats.columns} columna${stats.columns === 1 ? "" : "s"}`,
-    `${stats.nonEmptyCells}/${stats.cells} celdas con valor`,
+    `${stats.rows} row${stats.rows === 1 ? "" : "s"}`,
+    `${stats.columns} column${stats.columns === 1 ? "" : "s"}`,
+    `${stats.nonEmptyCells}/${stats.cells} cells with a value`,
   ];
-  if (!stats.isRectangular) bits.push("irregular");
+  if (!stats.isRectangular) bits.push("ragged");
   statsEl.textContent = bits.join(" · ");
 }
 
 function updateSourceBadge(): void {
   const label =
-    sourceKind === "html" ? "origen: text/html" : sourceKind === "file" ? "origen: archivo" : "";
+    sourceKind === "html" ? "source: text/html" : sourceKind === "file" ? "source: file" : "";
   sourceBadge.textContent = label;
   sourceBadge.hidden = label === "";
 }
@@ -239,7 +239,7 @@ function render(): void {
   codeEl.textContent = currentOutput.length > 0 ? currentOutput : "—";
 
   updateSourceBadge();
-  copyButton.textContent = activeTab === "grid" ? "Copiar TSV" : "Copiar salida";
+  copyButton.textContent = activeTab === "grid" ? "Copy TSV" : "Copy output";
   copyButton.disabled = currentOutput.length === 0;
 }
 
@@ -313,9 +313,9 @@ copyButton.addEventListener("click", async () => {
   if (currentOutput.length === 0) return;
   try {
     await navigator.clipboard.writeText(currentOutput);
-    showFeedback("¡Copiado!");
+    showFeedback("Copied!");
   } catch {
-    showFeedback("No se pudo copiar");
+    showFeedback("Could not copy");
   }
 });
 
@@ -343,10 +343,10 @@ async function loadFile(file: File): Promise<void> {
     pasteArea.value = text;
     lastHtml = "";
     pendingHtml = null;
-    fileMeta.textContent = `${file.name} · delimitador "${delimiter === "\t" ? "\\t" : delimiter}"`;
+    fileMeta.textContent = `${file.name} · delimiter "${delimiter === "\t" ? "\\t" : delimiter}"`;
     render();
   } catch {
-    fileMeta.textContent = `No se pudo leer ${file.name}`;
+    fileMeta.textContent = `Could not read ${file.name}`;
   }
 }
 

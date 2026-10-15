@@ -9,11 +9,11 @@ const raw = readFileSync(file);
 const gzipped = gzipSync(raw).length;
 const kb = gzipped / 1024;
 
-console.log(`${file}: ${raw.length} B raw · ${kb.toFixed(2)} KB gzip (límite ${LIMIT_KB} KB)`);
+console.log(`${file}: ${raw.length} B raw · ${kb.toFixed(2)} KB gzip (limit ${LIMIT_KB} KB)`);
 
 if (kb > LIMIT_KB) {
-  console.error(`✗ Superó el límite de ${LIMIT_KB} KB gzip`);
+  console.error(`✗ Exceeded the ${LIMIT_KB} KB gzip limit`);
   process.exit(1);
 }
 
-console.log("✓ Dentro del límite de tamaño");
+console.log("✓ Within the size limit");

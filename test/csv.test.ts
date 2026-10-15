@@ -62,7 +62,7 @@ describe("detectDelimiter", () => {
   });
 
   it("keeps the comma when nothing looks delimited", () => {
-    expect(detectDelimiter("solo una columna")).toBe(",");
+    expect(detectDelimiter("just one column")).toBe(",");
     expect(detectDelimiter("")).toBe(",");
   });
 

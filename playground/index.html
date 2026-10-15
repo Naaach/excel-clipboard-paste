@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="es" data-theme="auto">
+<html lang="en" data-theme="auto">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Pega un rango de Excel o Google Sheets y conviértelo en una matriz. Demo interactiva de excel-clipboard-paste."
+      content="Paste a range from Excel or Google Sheets and turn it into a matrix. Interactive demo of excel-clipboard-paste."
     />
     <title>excel-clipboard-paste · playground</title>
     <link rel="stylesheet" href="./playground.css" />
@@ -16,14 +16,14 @@
         <span class="brand-mark" aria-hidden="true">▦</span>
         <div class="brand-text">
           <h1 class="brand-title">excel-clipboard-paste</h1>
-          <p class="brand-subtitle">convertir un pegado de Excel / Sheets en una matriz</p>
+          <p class="brand-subtitle">turn an Excel / Sheets paste into a matrix</p>
         </div>
       </div>
       <div class="topbar-actions">
         <span class="badge">0 deps</span>
         <span class="badge">TypeScript</span>
         <span class="badge">ESM + CJS</span>
-        <button id="theme-toggle" class="icon-button" type="button" aria-label="Cambiar tema">
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="Toggle theme">
           <span data-theme-label>Auto</span>
         </button>
       </div>
@@ -32,72 +32,72 @@
     <main class="layout">
       <section class="panel input-panel" aria-labelledby="input-heading">
         <div class="panel-head">
-          <h2 id="input-heading">1 · Pega aquí</h2>
+          <h2 id="input-heading">1 · Paste here</h2>
           <p class="muted">
-            Copia un rango en Excel o Google Sheets (Ctrl/Cmd + C) y pégalo (Ctrl/Cmd + V).
+            Copy a range in Excel or Google Sheets (Ctrl/Cmd + C) and paste it (Ctrl/Cmd + V).
           </p>
         </div>
 
-        <div class="samples" role="group" aria-label="Ejemplos">
-          <span class="samples-label">Ejemplos:</span>
-          <!-- botones inyectados por main.ts -->
+        <div class="samples" role="group" aria-label="Samples">
+          <span class="samples-label">Samples:</span>
+          <!-- buttons injected by main.ts -->
         </div>
 
         <div class="paste-wrap">
-          <label class="visually-hidden" for="paste-area">Área de pegado</label>
+          <label class="visually-hidden" for="paste-area">Paste area</label>
           <textarea
             id="paste-area"
             class="paste-area"
             spellcheck="false"
             autocomplete="off"
-            placeholder="Haz clic aquí y pega, o escribe texto separado por tabuladores…"
+            placeholder="Click here and paste, or type tab-separated text…"
           ></textarea>
-          <div class="drop-hint" id="drop-hint" aria-hidden="true">Suelta un .tsv, .csv o .txt aquí</div>
+          <div class="drop-hint" id="drop-hint" aria-hidden="true">Drop a .tsv, .csv or .txt file here</div>
         </div>
 
         <div class="input-actions">
-          <button id="clear" class="ghost-button" type="button">Limpiar</button>
-          <button id="file-button" class="ghost-button" type="button">Abrir archivo</button>
+          <button id="clear" class="ghost-button" type="button">Clear</button>
+          <button id="file-button" class="ghost-button" type="button">Open file</button>
           <input id="file-input" type="file" accept=".tsv,.csv,.txt,text/*" hidden />
-          <span id="source-badge" class="source-badge" hidden>origen: text/html</span>
+          <span id="source-badge" class="source-badge" hidden>source: text/html</span>
         </div>
 
         <fieldset class="options">
-          <legend>2 · Opciones del parser</legend>
+          <legend>2 · Parser options</legend>
           <label class="switch">
             <input type="checkbox" id="opt-trim" checked />
-            <span><code>trim</code> recortar espacios</span>
+            <span><code>trim</code> trim whitespace</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-drop-rows" checked />
-            <span><code>dropEmptyRows</code> filas vacías</span>
+            <span><code>dropEmptyRows</code> empty rows</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-drop-cols" />
-            <span><code>dropEmptyColumns</code> columnas vacías</span>
+            <span><code>dropEmptyColumns</code> empty columns</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-rect" checked />
-            <span><code>rectangular</code> rellenar hasta el ancho</span>
+            <span><code>rectangular</code> pad to the widest row</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-html" />
-            <span><code>preferHtml</code> usar la tabla HTML</span>
+            <span><code>preferHtml</code> use the HTML table</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="opt-coerce" />
-            <span><code>coerce</code> números/booleanos (grid y JSON)</span>
+            <span><code>coerce</code> numbers/booleans (grid & JSON)</span>
           </label>
         </fieldset>
       </section>
 
       <section class="panel output-panel" aria-labelledby="output-heading">
         <div class="panel-head">
-          <h2 id="output-heading">3 · Resultado</h2>
-          <p id="stats" class="muted" role="status" aria-live="polite">Aún no hay datos.</p>
+          <h2 id="output-heading">3 · Result</h2>
+          <p id="stats" class="muted" role="status" aria-live="polite">No data yet.</p>
         </div>
 
-        <div class="tabs" role="tablist" aria-label="Formatos de salida">
+        <div class="tabs" role="tablist" aria-label="Output formats">
           <button class="tab is-active" id="tab-grid" data-tab="grid" role="tab" aria-selected="true" aria-controls="panel-grid" tabindex="0">Grid</button>
           <button class="tab" id="tab-json" data-tab="json" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">JSON</button>
           <button class="tab" id="tab-csv" data-tab="csv" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">CSV</button>
@@ -107,7 +107,7 @@
 
         <div class="output-body">
           <div id="panel-grid" class="view" role="tabpanel" aria-labelledby="tab-grid" tabindex="0">
-            <div class="grid-scroll"><div id="grid" class="grid-empty">Pega datos para ver el grid.</div></div>
+            <div class="grid-scroll"><div id="grid" class="grid-empty">Paste some data to see the grid.</div></div>
           </div>
           <div id="panel-code" class="view" role="tabpanel" aria-labelledby="tab-code-dynamic" tabindex="0" hidden>
             <pre id="code" class="code"><code>—</code></pre>
@@ -115,14 +115,14 @@
         </div>
 
         <div class="output-actions">
-          <button id="copy" class="primary-button" type="button">Copiar salida</button>
+          <button id="copy" class="primary-button" type="button">Copy output</button>
           <span id="copy-feedback" class="copy-feedback" role="status" aria-live="polite"></span>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      <span>El parser vive en <code>src/</code> · esta web solo lo consume.</span>
+      <span>The parser lives in <code>src/</code> · this site only consumes it.</span>
       <span id="file-meta" class="muted"></span>
     </footer>
 

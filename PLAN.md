@@ -1,113 +1,115 @@
 # 📐 Plan — `excel-clipboard-paste`
 
-> Objetivo: recibir un pegado desde **Excel** o **Google Sheets** y convertirlo en una
-> **matriz de valores** (`string[][]`). Es una **dependencia de npm** con una **web de
-> ejemplo interactiva (Vite)** en el mismo repo.
+> Goal: receive a paste from **Excel** or **Google Sheets** and turn it into a **matrix of
+> values** (`string[][]`). It is an **npm dependency** with an **interactive example site
+> (Vite)** in the same repo.
 >
-> Modelo: **núcleo pequeño e independiente de frameworks** + playground que lo consume.
-> Este archivo es la fuente de verdad editable: marca, desmarca y añade cosas.
+> Model: a **tiny, framework-agnostic core** plus a playground that consumes it.
+> This file is the editable source of truth: check, uncheck and add things.
 
-**Nombre:** `excel-clipboard-paste` (el plan original lo llamaba `excel-paste`).
-**Estado:** `0.1.0` sin publicar. Repo en `github.com/Naaach/excel-clipboard-paste`.
-**Cambios:** ver [`CHANGELOG.md`](./CHANGELOG.md).
-
----
-
-## 1. Qué es y por qué
-
-Copiar un rango en Excel/Sheets pone en el portapapeles texto con **tabuladores** entre
-celdas y **saltos de línea** entre filas (flavor `text/plain`). Ese es el 90% de los casos
-reales y casi nadie lo trata bien de forma aislada. La idea es tener una pieza pequeña,
-sin dependencias y bien probada, que se pueda usar en cualquier web o framework.
-
-La gracia no es "parsear bien" (es simple), sino **parsear bien los bordes**:
-saltos `\r\n`, tabuladores finales, filas fantasma, celdas vacías, y no romper nunca el
-tipo de dato que Excel envió.
+**Name:** `excel-clipboard-paste` (the original plan called it `excel-paste`).
+**Status:** `0.1.0` published. Repo at `github.com/Naaach/excel-clipboard-paste`.
+**Changes:** see [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## 2. Estado actual (lo que YA está hecho) ✅
+## 1. What it is and why
 
-### Núcleo
+Copying a range in Excel/Sheets puts clipboard text with **tabs** between cells and
+**line breaks** between rows (the `text/plain` flavor). That is 90% of the real cases and
+almost nobody handles it well in isolation. The idea is to have a small, dependency-free,
+well-tested piece that can be used in any web app or framework.
+
+The trick is not "parsing well" (it is simple) but **parsing the edges well**: `\r\n`
+endings, trailing tabs, phantom rows, empty cells, and never breaking the data type Excel
+sent.
+
+---
+
+## 2. Current state (what is ALREADY done) ✅
+
+### Core
 - [x] `src/parse.ts` → `parseClipboardText`, `parseClipboard`, `parseHtmlTable`, `hasHtmlTable`, `readClipboardData`, `parsePasteEvent`.
-- [x] `src/matrix.ts` → utilidades (`matrixStats`, `padMatrix`, `transposeMatrix`, `coerceMatrix`, `toObjects`, serializadores…).
-- [x] `src/types.ts` → tipos públicos (`Matrix`, `ParseOptions`, `MatrixStats`…).
-- [x] `src/index.ts` → API pública única.
-- [x] Sin dependencias de runtime. TypeScript estricto (`noUncheckedIndexedAccess` incluido).
-- [x] Build dual **ESM + CJS + `.d.ts`** con tsup, **sin minificar**: ≈ 9.3 KB raw / ≈ 2.8 KB gzip (ESM).
-- [x] Normaliza `\r\n` y `\r`; conserva tabuladores finales; ignora saltos finales y el **BOM** inicial.
+- [x] `src/matrix.ts` → utilities (`matrixStats`, `padMatrix`, `transposeMatrix`, `coerceMatrix`, `toObjects`, serializers…).
+- [x] `src/types.ts` → public types (`Matrix`, `ParseOptions`, `MatrixStats`…).
+- [x] `src/index.ts` → single public API.
+- [x] No runtime dependencies. Strict TypeScript (`noUncheckedIndexedAccess` included).
+- [x] Dual **ESM + CJS + `.d.ts`** build with tsup, **unminified**: ≈ 9.3 KB raw / ≈ 2.8 KB gzip (ESM).
+- [x] Normalizes `\r\n` and `\r`; keeps trailing tabs; ignores trailing newlines and a leading **BOM**.
 
-### Extras sobre el plan original
-- [x] **Opciones estructurales**: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows` (se aplica al final, sobre el resultado).
-- [x] **Ruta `text/html`**: `parseHtmlTable` expande `colspan`/`rowspan` con los límites del estándar HTML (1000 / 65534), ignora tablas anidadas y convierte `<br>` en `\n`.
-- [x] **`preferHtml`** con *fallback* a texto solo cuando **no hay tabla** (no cuando las opciones vacían la matriz).
-- [x] **`hasHtmlTable`** para comprobar sin parsear.
-- [x] **Utilidades de matriz** y **serializadores** (`toCSV` con quoting RFC 4180, `toTSV`, `toMarkdownTable`, `toJSON`).
-- [x] **`toObjects`**: matriz → array de objetos con cabeceras (rellena vacías, sufija duplicados).
-- [x] **`coerceMatrix` opt-in** con grupos de miles estrictos (`1,234` sí, `1,5` no) y `-0` normalizado.
+### Extras on top of the original plan
+- [x] **Structural options**: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows` (applied last, over the result).
+- [x] **`text/html` route**: `parseHtmlTable` expands `colspan`/`rowspan` within the HTML standard limits (1000 / 65534), ignores nested tables and turns `<br>` into `\n`.
+- [x] **`preferHtml`** with a fallback to text only when **there is no table** (not when the options empty the matrix).
+- [x] **`hasHtmlTable`** to check without parsing.
+- [x] **Matrix utilities** and **serializers** (`toCSV` with RFC 4180 quoting, `toTSV`, `toMarkdownTable`, `toJSON`).
+- [x] **`toObjects`**: matrix → array of objects with headers (fills empty ones, suffixes duplicates).
+- [x] **Opt-in `coerceMatrix`** with strict thousands groups (`1,234` yes, `1,5` no) and normalized `-0`.
 
 ### Playground (Vite)
-- [x] Tema claro/oscuro/auto persistido; `<h1>`; foco visible en todos los controles.
-- [x] Pegar de verdad (captura `text/html` del evento), botones de ejemplo, arrastrar/soltar **solo archivos**, abrir `.tsv`/`.csv`/`.txt`.
-- [x] **Detección de delimitador** (`,` `;` `\t` `|`) al importar CSV; respeta comillas y saltos dentro de campos.
-- [x] Grid tipo hoja de cálculo (letras de columna / números de fila), cap de 500 filas con aviso.
-- [x] Salidas: Grid, JSON, CSV, TSV, Markdown + copiar; `coerce` afecta a grid **y** JSON (CSV/TSV/Markdown mantienen el texto original).
-- [x] Pestañas accesibles (`role=tablist`, `aria-selected`, roving tabindex con flechas/Home/End).
-- [x] Render coalescido con `requestAnimationFrame`; el cap se aplica antes de coercer.
+- [x] Light/dark/auto theme with persistence; `<h1>`; visible focus on every control.
+- [x] Real pasting (captures the event's `text/html`), sample buttons, drag & drop for **files only**, open `.tsv`/`.csv`/`.txt`.
+- [x] **Delimiter detection** (`,` `;` `\t` `|`) when importing CSV; respects quotes and line breaks inside fields.
+- [x] Spreadsheet-like grid (column letters / row numbers), 500-row cap with a notice.
+- [x] Outputs: Grid, JSON, CSV, TSV, Markdown + copy; `coerce` affects the grid **and** JSON (CSV/TSV/Markdown keep the original text).
+- [x] Accessible tabs (`role=tablist`, `aria-selected`, roving tabindex with arrows/Home/End).
+- [x] Render coalesced with `requestAnimationFrame`; the cap is applied before coercing.
 
-### Calidad
-- [x] **72 tests** (Vitest + jsdom): parser, HTML (colspan/rowspan/anidadas/`<br>`/clamps), utilidades, coerción, serializadores, CSV del playground.
-- [x] GitHub Actions: `typecheck` + `test` + `build` + `build:demo` + `size` en Node 20/22/24.
-- [x] `pnpm size` con presupuesto de 6 KB gzip.
-- [x] `CHANGELOG.md`, `.gitattributes` (LF), `.editorconfig`, metadata npm completa (`repository`, `bugs`, `homepage`, `packageManager`).
-- [x] Revisión adversarial con agentes (núcleo, tests, playground, packaging) — hallazgos corregidos (ver §9).
-
----
-
-## 3. Decisiones de diseño
-
-- [x] **El parser nunca infiere tipos.** Devuelve `string[][]`. La coerción es opt-in.
-- [x] **Sin dependencias de runtime.** Un DOM opcional (jsdom/DOMParser) solo para `text/html`.
-- [x] **Núcleo sin frameworks.** React/Vue, si llegan, serán adaptadores finos.
-- [x] **`parseClipboardText` no toca el portapapeles.** Solo transforma texto.
-- [x] **CSV fuera del núcleo.** Es portapapeles de hoja, no CSV. El playground trae un lector CSV mínimo.
-- [x] **Orden de opciones documentado**: `trim` → `dropEmpty*` → `rectangular` → `maxRows`.
-- [x] **`maxRows` inválido (NaN) desactiva el límite** en vez de lanzar.
-- [x] **`removeEmptyColumns` conserva filas cortas** (no rellena al ancho de la cabecera).
-- [x] **Build sin minificar** (9 KB no necesita minificado y así es depurable).
-- [x] **Compatibilidad de nombre**: `parsePasteEvent` se mantiene como alias deprecado.
+### Quality
+- [x] **72 tests** (Vitest + jsdom): parser, HTML (colspan/rowspan/nested/`<br>`/clamps), utilities, coercion, serializers, playground CSV.
+- [x] GitHub Actions: `typecheck` + `test` + `build` + `build:demo` + `size` on Node 20/22/24.
+- [x] `pnpm size` with a 6 KB gzip budget.
+- [x] `CHANGELOG.md`, `.gitattributes` (LF), `.editorconfig`, complete npm metadata (`repository`, `bugs`, `homepage`, `packageManager`).
+- [x] Adversarial review with agents (core, tests, playground, packaging) — findings fixed (see §9).
+- [x] **Published on npm: [`excel-clipboard-paste@0.1.0`](https://www.npmjs.com/package/excel-clipboard-paste)** with SLSA provenance and a GitHub release.
 
 ---
 
-## 4. Estructura del repo
+## 3. Design decisions
+
+- [x] **The parser never infers types.** It returns `string[][]`. Coercion is opt-in.
+- [x] **No runtime dependencies.** An optional DOM (jsdom/DOMParser) only for `text/html`.
+- [x] **Framework-free core.** React/Vue, if they come, will be thin adapters.
+- [x] **`parseClipboardText` never touches the clipboard.** It only transforms text.
+- [x] **CSV stays out of the core.** It is spreadsheet clipboard, not CSV. The playground ships a minimal CSV reader.
+- [x] **Documented option order**: `trim` → `dropEmpty*` → `rectangular` → `maxRows`.
+- [x] **Invalid `maxRows` (NaN) disables the cap** instead of throwing.
+- [x] **`removeEmptyColumns` keeps short rows short** (does not pad to the header width).
+- [x] **Unminified build** (9 KB does not need minification and stays debuggable).
+- [x] **Name compatibility**: `parsePasteEvent` is kept as a deprecated alias.
+
+---
+
+## 4. Repo structure
 
 ```text
 excel-clipboard-paste/
 ├── src/
-│   ├── parse.ts        # parser de texto y de eventos (+ HTML)
-│   ├── matrix.ts       # utilidades y serializadores
-│   ├── types.ts        # tipos públicos
-│   └── index.ts        # API pública
-├── playground/         # web interactiva (Vite)
+│   ├── parse.ts        # text and event parser (+ HTML)
+│   ├── matrix.ts       # utilities and serializers
+│   ├── types.ts        # public types
+│   └── index.ts        # public API
+├── playground/         # interactive site (Vite)
 │   ├── index.html
 │   ├── main.ts
 │   ├── playground.css
 │   ├── samples.ts
-│   └── csv.ts          # import de CSV + detección de delimitador (solo playground)
+│   └── csv.ts          # CSV import + delimiter detection (playground only)
 ├── test/               # 72 tests
 │   ├── parseClipboardText.test.ts
 │   ├── parseClipboard.test.ts
 │   ├── html.test.ts
 │   ├── matrix.test.ts
 │   └── csv.test.ts
-├── scripts/size.mjs    # presupuesto de tamaño
+├── scripts/size.mjs    # size budget
 ├── .github/workflows/ci.yml
+├── .github/workflows/release.yml
 ├── CHANGELOG.md
 ├── README.md
-├── PLAN.md             # ← este archivo
+├── PLAN.md             # ← this file
 ├── package.json
 ├── pnpm-lock.yaml
-├── pnpm-workspace.yaml # solo settings de pnpm (allowBuilds de esbuild)
+├── pnpm-workspace.yaml # pnpm settings only (esbuild allowBuilds)
 ├── tsup.config.ts
 ├── vite.config.ts
 ├── vitest.config.ts
@@ -117,161 +119,162 @@ excel-clipboard-paste/
 
 ---
 
-## 5. API implementada
+## 5. Implemented API
 
 ```ts
-// Parser
+// Parsers
 parseClipboard(event, options?)      // ClipboardEvent -> string[][]
 parseClipboardText(text, options?)   // string -> string[][]
 parseHtmlTable(html, options?)       // "<table>" -> string[][]
-hasHtmlTable(html)                   // boolean, sin parsear
+hasHtmlTable(html)                   // boolean, without parsing
 readClipboardData(event)             // -> { text, html }
-parsePasteEvent                      // alias deprecado de parseClipboard
+parsePasteEvent                      // deprecated alias of parseClipboard
 
-// Utilidades
+// Utilities
 matrixStats, padMatrix, transposeMatrix,
 removeEmptyRows, removeEmptyColumns,
 getHeaderRow, dropHeaderRow, isEmptyMatrix, cloneMatrix, mapCells,
 coerceMatrix, coerceCell, toObjects
 
-// Serializadores
+// Serializers
 toCSV, toTSV, toMarkdownTable, toJSON
 ```
 
-Opciones: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows`, `preferHtml`.
+Options: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows`, `preferHtml`.
 
 ---
 
-## 6. Mejoras propuestas (roadmap) 🚧
+## 6. Proposed improvements (roadmap) 🚧
 
-### v0.2 — pulir y endurecer
-- [ ] Cobertura de código (`@vitest/coverage-v8`) y umbral mínimo en CI.
-- [ ] Copias reales de Excel y Google Sheets guardadas como fixtures de texto.
-- [ ] Pruebas manuales de pegado en Chrome, Firefox y Safari (Windows/macOS).
-- [ ] `presets.ts` con combinaciones típicas (`forSheets`, `forExcel`).
-- [ ] Recetas en el README (tabla editable, validación, import a DB).
+### v0.2 — polish and harden
+- [ ] Code coverage (`@vitest/coverage-v8`) with a minimum threshold in CI.
+- [ ] Real Excel and Google Sheets copies stored as text fixtures.
+- [ ] Manual paste testing in Chrome, Firefox and Safari (Windows/macOS).
+- [ ] `presets.ts` with typical combinations (`forSheets`, `forExcel`).
+- [ ] Recipes in the README (editable table, validation, DB import).
 - [ ] ESLint/Prettier + Dependabot.
-- [ ] Decidir si `\r` suelto dentro de celda debe tratarse como salto de fila (hoy sí).
+- [ ] Decide whether a lone `\r` inside a cell should count as a row break (today it does).
 
-### v0.3 — más formatos del portapapeles
-- [ ] Estilos básicos de la tabla HTML (`font-weight`, `font-style`, `text-align`, color):
-      API tentativa `parseHtmlTable(html, { styles: true }) -> { matrix, styles }`.
-- [ ] Detección de números/fechas **opcional y explícita** (`{ types: true }`), con locale.
-- [ ] Celdas multilínea con comillas en el **núcleo** (solo si aparece en uso real).
-- [ ] `readClipboard()` async con la Clipboard API (permiso del usuario).
-- [ ] Export a `.xlsx` ligero (¿o dejarlo fuera? ver riesgos).
+### v0.3 — more clipboard formats
+- [ ] Basic HTML table styles (`font-weight`, `font-style`, `text-align`, color):
+      tentative API `parseHtmlTable(html, { styles: true }) -> { matrix, styles }`.
+- [ ] Optional and explicit number/date detection (`{ types: true }`), with locale support.
+- [ ] Multiline quoted cells in the **core** (only if real usage demands it).
+- [ ] `readClipboard()` async with the Clipboard API (user permission).
+- [ ] Lightweight `.xlsx` export (or keep it out? see risks).
 
-### v0.3 — adaptadores (opcional, solo si hay demanda)
+### v0.3 — adapters (optional, only if there is demand)
 - [ ] `excel-clipboard-paste-react`: `<PasteArea>` + `usePaste`.
 - [ ] `excel-clipboard-paste-vue`: `<PasteArea>` + `usePaste` + plugin.
-- [ ] Paridad 100% de opciones entre adaptadores.
+- [ ] 100% option parity between adapters.
 
-### v1.0 — consolidar
-- [ ] API congelada + semver estricto.
-- [ ] Playground desplegado (GitHub Pages / Cloudflare Pages / Vercel) + GIF en el README.
-- [ ] Changesets para versionado (si crece a monorepo).
+### v1.0 — consolidate
+- [ ] Frozen API + strict semver.
+- [ ] Deployed playground (GitHub Pages / Cloudflare Pages / Vercel) + GIF in the README.
+- [ ] Changesets for versioning (if it grows into a monorepo).
 
-### Ideas sueltas / parking (evaluar, no prometer)
-- [ ] Modo "pegar en un grid editable" (probablemente otro paquete).
-- [ ] Integración con `handsontable`/`ag-grid` como ejemplo, no como dependencia.
-- [ ] CLI `npx excel-clipboard-paste` para convertir `.tsv` de stdin a `.json`.
-- [ ] Web Worker para rangos enormes.
-- [ ] Detección heurística de cabeceras (`{ detectHeader: true }`).
-- [ ] `fromObjects(registros)` como inversa de `toObjects`.
-
----
-
-## 7. Publicación en npm
-
-✅ **Publicado: [`excel-clipboard-paste@0.1.0`](https://www.npmjs.com/package/excel-clipboard-paste)**
-(2026-10-15), con **provenance SLSA** firmada desde GitHub Actions, firma del registry y
-[release en GitHub](https://github.com/Naaach/excel-clipboard-paste/releases/tag/v0.1.0).
-
-El pipeline ([`.github/workflows/release.yml`](./.github/workflows/release.yml)) queda como
-vía oficial: tag `vX.Y.Z` → `typecheck + test + build + size` → `npm publish --provenance`
-→ release de GitHub. Idempotente: si la versión ya está en npm, lo salta.
-
-Apuntes de la primera publicación (para no volver a pisar el mismo charco):
-
-- 🔴 El primer intento falló con `E422`: npm solo acepta provenance de repos **públicos**.
-  En ese momento el registry leyó la visibilidad como `private`. Confirmada la visibilidad
-  pública (API anónima), el **rerun del mismo run** publicó sin cambiar nada.
-- El registry crea una entrada interna `0.0.0-stage` al estrenar un nombre de paquete:
-  es un artefacto de npm, no una versión instalable (el `dist-tag latest` es `0.1.0`).
-- Verificado instalando desde npm en un proyecto limpio: `require` (CJS) e `import` (ESM)
-  funcionan, con tipos y `exports` correctos.
-
-Siguientes versiones:
-- [ ] `pnpm version patch|minor|major && git push --follow-tags` (el pipeline hace el resto).
-- [ ] Considerar Changesets si el repo crece a monorepo (v1.0).
+### Loose ideas / parking (evaluate, do not promise)
+- [ ] A "paste into an editable grid" mode (probably a different package).
+- [ ] Integrations with `handsontable`/`ag-grid` as examples, not dependencies.
+- [ ] CLI `npx excel-clipboard-paste` to convert `.tsv` from stdin to `.json`.
+- [ ] Web Worker for huge ranges.
+- [ ] Heuristic header detection (`{ detectHeader: true }`).
+- [ ] `fromObjects(records)` as the inverse of `toObjects`.
 
 ---
 
-## 8. Repo en GitHub
+## 7. Publishing to npm
 
-- [x] Repo creado: `github.com/Naaach/excel-clipboard-paste` (público, `main` trackeando `origin/main`).
-- [x] CI con Actions (Node 20/22/24) y pipeline Release (tag → npm + release de GitHub).
-- [x] Release `v0.1.0` creada en GitHub.
-- [ ] Desplegar el playground (Pages) y enlazarlo en el README.
-- [ ] Temas/descripción y imagen social del repo.
+✅ **Published: [`excel-clipboard-paste@0.1.0`](https://www.npmjs.com/package/excel-clipboard-paste)**
+(2026-10-15), with **SLSA provenance** signed from GitHub Actions, a registry signature and a
+[GitHub release](https://github.com/Naaach/excel-clipboard-paste/releases/tag/v0.1.0).
+
+The pipeline (`.github/workflows/release.yml`) is the official path: tag `vX.Y.Z` →
+`typecheck + test + build + size` → `npm publish --provenance` → GitHub release.
+Idempotent: if the version is already on npm, it skips publishing.
+
+Notes from the first publish (so we do not step in the same puddle again):
+
+- 🔴 The first attempt failed with `E422`: npm only accepts provenance from **public**
+  repositories. At that moment the registry read the visibility as `private`. Once the
+  public visibility was confirmed (anonymous API), a **rerun of the same run** published
+  without changing anything.
+- The registry creates an internal `0.0.0-stage` entry the first time a package name is
+  claimed: it is an npm artifact, not an installable version (the `latest` dist-tag is `0.1.0`).
+- Verified by installing from npm in a clean project: `require` (CJS) and `import` (ESM)
+  both work, with correct types and `exports`.
+
+Next releases:
+- [ ] `pnpm version patch|minor|major && git push --follow-tags` (the pipeline does the rest).
+- [ ] Consider Changesets if the repo grows into a monorepo (v1.0).
 
 ---
 
-## 9. Revisión adversarial (agentes) — hallazgos corregidos
+## 8. GitHub repo
 
-Se pasaron cuatro revisores independientes (núcleo, tests, playground, packaging).
-Lo importante que se arregló:
+- [x] Repo created: `github.com/Naaach/excel-clipboard-paste` (public, `main` tracking `origin/main`).
+- [x] CI with Actions (Node 20/22/24) and the Release pipeline (tag → npm + GitHub release).
+- [x] `v0.1.0` release created on GitHub.
+- [ ] Deploy the playground (Pages) and link it from the README.
+- [ ] Repo topics/description and social image.
 
-**Núcleo**
-- 🔴 `parseHtmlTable`: un `rowspan` seguido de una fila más corta **perdía o desplazaba**
-  valores (el carry se saltaba si había un hueco delante). Reescrito el algoritmo de grid:
-  los slots activos ocupan su fila siempre y las celdas se colocan en el primer hueco libre.
-- 🔴 `colspan="1e999"` → bucle infinito / OOM al pegar. Ahora los spans se truncan y se
-  recortan a los límites del estándar HTML (1000 / 65534).
-- 🔴 `coerceCell("1,5")` → `15` (decimales europeos corrompidos). Ahora solo se quitan
-  comas con grupos de miles estrictos; `-0` → `0`.
-- 🟠 Tablas anidadas filtraban filas/celdas (ahora `table.rows` / `tr.cells`).
-- 🟠 `<br>` dentro de celda se perdía (ahora `\n`, igual que `text/plain`).
-- 🟠 `maxRows` se aplicaba antes de `dropEmptyRows` y descartaba filas válidas.
-- 🟠 `readClipboardData` propagaba excepciones de `getData`.
-- 🟡 `removeEmptyColumns` rellenaba filas cortas; `toMarkdownTable` dejaba pasar `\r`;
-  `toTSV` prometía ida y vuelta que no siempre existe (documentado).
+---
+
+## 9. Adversarial review (agents) — findings fixed
+
+Four independent reviewers ran (core, tests, playground, packaging). The important things
+that were fixed:
+
+**Core**
+- 🔴 `parseHtmlTable`: a `rowspan` followed by a shorter row **lost or displaced values**
+  (the carry was skipped when a gap preceded it). The grid algorithm was rewritten: active
+  slots always occupy their row and cells are placed into the first free slot.
+- 🔴 `colspan="1e999"` → infinite loop / OOM when pasting. Spans are now truncated and
+  clamped to the HTML standard limits (1000 / 65534).
+- 🔴 `coerceCell("1,5")` → `15` (European decimals corrupted). Commas are now only stripped
+  with strict thousands groups; `-0` → `0`.
+- 🟠 Nested tables leaked rows/cells (now `table.rows` / `tr.cells`).
+- 🟠 `<br>` inside a cell was lost (now `\n`, matching `text/plain`).
+- 🟠 `maxRows` was applied before `dropEmptyRows` and discarded valid rows.
+- 🟠 `readClipboardData` propagated `getData` exceptions.
+- 🟡 `removeEmptyColumns` padded short rows; `toMarkdownTable` let `\r` through;
+  `toTSV` promised a round-trip that does not always exist (documented).
 
 **Playground**
-- 🟠 `coerce` solo afectaba al grid (JSON/CSV seguían con texto). Ahora afecta a grid y JSON,
-  y la etiqueta lo dice.
-- 🟠 Tabs sin `aria-selected` ni navegación por teclado → tablist completa con roving tabindex.
-- 🟠 El botón "Abrir archivo" no era accesible por teclado (input oculto) → botón real.
-- 🟠 El drop zone interceptaba arrastres de texto normal → solo actúa con archivos.
-- 🟠 `pendingHtml` obsoleto se filtraba a ediciones posteriores.
-- 🟡 BOM sin quitar, CSV con `;` en una sola columna (detección de delimitador),
-  cap aplicado antes de coercer, render por frame, contraste de `--null`, `fileMeta` obsoleto.
+- 🟠 `coerce` only affected the grid (JSON/CSV kept text). Now it affects grid and JSON,
+  and the label says so.
+- 🟠 Tabs without `aria-selected` or keyboard navigation → full tablist with roving tabindex.
+- 🟠 The "Open file" button was not keyboard accessible (hidden input) → real button.
+- 🟠 The drop zone hijacked normal text drags → only acts on files.
+- 🟠 Stale `pendingHtml` leaked into later edits.
+- 🟡 BOM not stripped, CSV with `;` collapsing into one column (delimiter detection),
+  cap applied before coercing, per-frame rendering, `--null` contrast, stale `fileMeta`.
 
 **Packaging / CI**
-- 🔴 El job de Node 18 iba a fallar (vite 7 requiere ≥ 20.19) → matriz `20/22/24`.
-- 🟠 Desfase pnpm 10 vs 12 → `packageManager` fijo y `action-setup` sin versión.
-- 🟠 Faltaban `repository`/`bugs`/`homepage`/`author` y el `default` en `exports`.
-- 🟡 `prepublishOnly` sin `typecheck`, `minify: true` innecesario, sin `CHANGELOG.md`,
-  sin `.gitattributes`, `.gitignore` incompleto (`*.tgz`, `.vscode/`…).
+- 🔴 The Node 18 job was going to fail (vite 7 requires ≥ 20.19) → matrix `20/22/24`.
+- 🟠 pnpm 10 vs 12 skew → fixed `packageManager` and `action-setup` without a version.
+- 🟠 Missing `repository`/`bugs`/`homepage`/`author` and the `default` exports condition.
+- 🟡 `prepublishOnly` without `typecheck`, unnecessary `minify: true`, no `CHANGELOG.md`,
+  no `.gitattributes`, incomplete `.gitignore` (`*.tgz`, `.vscode/`…).
 
 ---
 
-## 10. Riesgos y mitigaciones
+## 10. Risks and mitigations
 
-| Riesgo | Mitigación |
+| Risk | Mitigation |
 |---|---|
-| "Es un `split('\t')`, ¿para qué una librería?" | Enfatizar los bordes (CRLF, celdas vacías, filas fantasma, HTML) y traer tests + playground. |
-| Scope creep hacia editor de tablas / xlsx | Mantener el núcleo minúsculo; todo lo gordo va a "parking" o a otro paquete. |
-| Nombre npm ocupado | Comprobar antes; alternativas: `clipboard-to-matrix`, `spreadsheet-paste`, `paste-table`. |
-| Diferencias entre navegadores en `text/html` | Fallback siempre a `text/plain`; nunca depender del HTML. |
-| Mantenimiento | Librería deliberadamente aburrida y estable; cambios solo con tests. |
+| "It's a `split('\t')`, why a library?" | Emphasize the edges (CRLF, empty cells, phantom rows, HTML) and ship tests + a playground. |
+| Scope creep towards table editors / xlsx | Keep the core tiny; anything heavy goes to "parking" or another package. |
+| npm name taken | Check first; alternatives: `clipboard-to-matrix`, `spreadsheet-paste`, `paste-table`. |
+| Browser differences in `text/html` | Always fall back to `text/plain`; never depend on the HTML. |
+| Maintenance | Deliberately boring and stable library; changes only with tests. |
 
 ---
 
-## 11. Historial
+## 11. History
 
-El changelog vive en [`CHANGELOG.md`](./CHANGELOG.md) (npm no incluye `PLAN.md`).
+The changelog lives in [`CHANGELOG.md`](./CHANGELOG.md) (npm does not include `PLAN.md`).
 
 ---
 
-*Última actualización: 2026-10-15*
+*Last updated: 2026-10-15*

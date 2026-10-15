@@ -4,12 +4,12 @@
 [![CI](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml)
 [![Release](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml)
 
-> Convierte lo que pegas desde **Excel** o **Google Sheets** en una matriz limpia de filas y columnas.
-> Cero dependencias · TypeScript · ESM + CJS · funciona en el navegador y en Node.
+> Turn what you paste from **Excel** or **Google Sheets** into a clean matrix of rows and columns.
+> Zero dependencies · TypeScript · ESM + CJS · works in the browser and in Node.
 
-Cuando copias un rango de una hoja de cálculo, el navegador recibe en el portapapeles
-texto separado por **tabuladores** (`\t`) y **saltos de línea** (`\n`). Esta librería
-lo convierte en `string[][]`, o sea, en algo que puedes recorrer, validar y guardar.
+When you copy a range in a spreadsheet, the browser receives clipboard text separated by
+**tabs** (`\t`) and **line breaks** (`\n`). This library turns it into `string[][]`, i.e.
+into something you can iterate, validate and store.
 
 ```ts
 import { parseClipboard } from "excel-clipboard-paste";
@@ -24,23 +24,23 @@ element.addEventListener("paste", (event) => {
 
 ---
 
-## Instalación
+## Install
 
 ```bash
 npm install excel-clipboard-paste
-# o
+# or
 pnpm add excel-clipboard-paste
-# o
+# or
 yarn add excel-clipboard-paste
 ```
 
-Trae sus propios tipos. En Node solo necesitas un DOM (jsdom) si usas la ruta de HTML.
+Types are included. In Node you only need a DOM (jsdom) if you use the HTML route.
 
 ---
 
-## Uso rápido
+## Quick start
 
-### 1. En un `paste` de un elemento (recomendado)
+### 1. On an element's `paste` event (recommended)
 
 ```ts
 import { parseClipboard } from "excel-clipboard-paste";
@@ -51,7 +51,7 @@ document.querySelector("textarea")?.addEventListener("paste", (event) => {
 });
 ```
 
-### 2. Solo texto (ya tienes el portapapeles)
+### 2. Text only (you already have the clipboard contents)
 
 ```ts
 import { parseClipboardText } from "excel-clipboard-paste";
@@ -60,10 +60,10 @@ parseClipboardText("Ana\t25\nLuis\t31");
 // [["Ana", "25"], ["Luis", "31"]]
 ```
 
-### 3. Preferir la tabla HTML (estructura de origen)
+### 3. Prefer the HTML table (source structure)
 
-Algunas aplicaciones incluyen además una versión `text/html` con una `<table>` real.
-Puedes preferirla y caer automáticamente al texto solo si **no** hay tabla:
+Some applications also include a `text/html` version containing a real `<table>`.
+You can prefer it and automatically fall back to text only when **no** table is present:
 
 ```ts
 const rows = parseClipboard(event, { preferHtml: true });
@@ -73,54 +73,54 @@ const rows = parseClipboard(event, { preferHtml: true });
 
 ## API
 
-### Parser principal
+### Main parsers
 
-| Función | Descripción |
+| Function | Description |
 |---|---|
-| `parseClipboard(event, options?)` | Lee un `ClipboardEvent` y devuelve `string[][]`. Opción `preferHtml`. |
-| `parseClipboardText(text, options?)` | Convierte texto ya obtenido en matriz (ignora el BOM inicial). |
-| `parseHtmlTable(html, options?)` | Extrae y expande una `<table>` de `text/html`. |
-| `hasHtmlTable(html)` | `true` si el HTML contiene una tabla, sin parsearlo. |
-| `readClipboardData(event)` | Devuelve `{ text, html }` sin efectos secundarios. |
-| `parsePasteEvent` | Alias de `parseClipboard` (compatibilidad). *Deprecado.* |
+| `parseClipboard(event, options?)` | Reads a `ClipboardEvent` and returns `string[][]`. Supports `preferHtml`. |
+| `parseClipboardText(text, options?)` | Turns already-obtained text into a matrix (ignores a leading BOM). |
+| `parseHtmlTable(html, options?)` | Extracts and expands a `<table>` from `text/html`. |
+| `hasHtmlTable(html)` | `true` if the HTML contains a table, without parsing it. |
+| `readClipboardData(event)` | Returns `{ text, html }` with no side effects. |
+| `parsePasteEvent` | Alias of `parseClipboard` (compatibility). *Deprecated.* |
 
-### Opciones del parser (`ParseOptions`)
+### Parser options (`ParseOptions`)
 
-| Opción | Por defecto | Qué hace |
+| Option | Default | What it does |
 |---|---|---|
-| `trim` | `false` | Recorta espacios de cada celda. |
-| `dropEmptyRows` | `false` | Elimina filas con todas las celdas vacías. |
-| `dropEmptyColumns` | `false` | Elimina columnas vacías en todas las filas. |
-| `rectangular` | `false` | Rellena las filas cortas con `""` hasta el ancho máximo. |
-| `maxRows` | `Infinity` | Limita el número de filas **del resultado** (se aplica al final). |
-| `preferHtml` | `false` | (solo `parseClipboard`) usa la tabla HTML si existe. |
+| `trim` | `false` | Trims whitespace around every cell. |
+| `dropEmptyRows` | `false` | Removes rows whose cells are all empty. |
+| `dropEmptyColumns` | `false` | Removes columns that are empty in every row. |
+| `rectangular` | `false` | Pads short rows with `""` up to the widest row. |
+| `maxRows` | `Infinity` | Caps the number of **result** rows (applied last). |
+| `preferHtml` | `false` | (only `parseClipboard`) uses the HTML table if present. |
 
-### Utilidades de matriz
+### Matrix utilities
 
 ```ts
 import {
   matrixStats,      // { rows, columns, cells, emptyCells, nonEmptyCells, isEmpty, isRectangular }
-  padMatrix,        // irregular -> rectangular
-  transposeMatrix,  // gira filas/columnas
-  removeEmptyRows,  // quita filas vacías
+  padMatrix,        // ragged -> rectangular
+  transposeMatrix,  // swaps rows and columns
+  removeEmptyRows,  // drops empty rows
   removeEmptyColumns,
-  getHeaderRow,     // primera fila (copia defensiva)
-  dropHeaderRow,    // sin la primera fila
+  getHeaderRow,     // first row (defensive copy)
+  dropHeaderRow,    // matrix without the first row
   isEmptyMatrix,
   cloneMatrix,
   mapCells,
   coerceMatrix,     // "25" -> 25, "true" -> true (opt-in)
   coerceCell,
-  toObjects,        // [["Nombre","Edad"],["Ana","25"]] -> [{ Nombre: "Ana", Edad: "25" }]
+  toObjects,        // [["Name","Age"],["Ana","25"]] -> [{ Name: "Ana", Age: "25" }]
 } from "excel-clipboard-paste";
 ```
 
-`coerceCell` solo elimina comas cuando forman grupos de miles consistentes
-(`1,234` → `1234`), de modo que un decimal europeo como `1,5` **no** se convierte
-en `15`. Los ceros a la izquierda (`"007"`) sí se convierten en número; si eso te
-importa, no fuerces la coerción para esas columnas.
+`coerceCell` only strips commas when they form consistent thousands groups
+(`1,234` → `1234`), so a European decimal such as `1,5` is **not** turned into `15`.
+Leading zeros (`"007"`) do become numbers; if that matters to you, skip coercion for
+those columns.
 
-### Serializadores
+### Serializers
 
 ```ts
 import { toCSV, toTSV, toMarkdownTable, toJSON } from "excel-clipboard-paste";
@@ -128,118 +128,117 @@ import { toCSV, toTSV, toMarkdownTable, toJSON } from "excel-clipboard-paste";
 toTSV([["A", "B"]]);          // "A\tB"
 toCSV([["a,b", 'x"y']]);      // "\"a,b\",\"x\"\"y\""
 toMarkdownTable([["A"], ["1"]]); // "| A |\n| --- |\n| 1 |"
-toJSON([["A"]]);              // pretty JSON (acepta matrices forzadas con coerceMatrix)
+toJSON([["A"]]);              // pretty JSON (accepts matrices coerced with coerceMatrix)
 ```
 
-> `toTSV` es ida y vuelta con `parseClipboardText` **mientras ninguna celda contenga
-> tabuladores o saltos de línea**: en TSV esas celdas son ambiguas por definición.
+> `toTSV` round-trips with `parseClipboardText` **as long as no cell contains a tab or a
+> line break**: in TSV those cells are ambiguous by definition.
 
 ---
 
-## Cómo funciona
+## How it works
 
-1. Normaliza finales de línea de Windows (`\r\n`) y Mac clásico (`\r`) a `\n` e ignora el BOM inicial.
-2. Quita **solo** los saltos de línea finales (pegar nunca debe añadir una fila fantasma),
-   pero **conserva** los tabuladores finales, que representan celdas vacías finales.
-3. Divide en filas por `\n` y en celdas por `\t`.
-4. Aplica las opciones en orden: `trim` → `dropEmptyRows` → `dropEmptyColumns` →
+1. Normalizes Windows (`\r\n`) and classic Mac (`\r`) line endings to `\n`, and ignores a leading BOM.
+2. Strips **only** trailing line breaks (pasting must never add a phantom row),
+   but **keeps** trailing tabs, which represent empty trailing cells.
+3. Splits rows on `\n` and cells on `\t`.
+4. Applies the options in order: `trim` → `dropEmptyRows` → `dropEmptyColumns` →
    `rectangular` → `maxRows`.
 
-La matriz resultante es **siempre `string[][]`**. La inferencia de números/booleanos
-es opt-in con `coerceMatrix`, para no alterar nunca lo que Excel envió.
+The resulting matrix is **always `string[][]`**. Number/boolean inference is opt-in
+via `coerceMatrix`, so nothing Excel sent is ever silently altered.
 
 ---
 
-## Playground interactivo (Vite)
+## Interactive playground (Vite)
 
-El repo incluye una web de demostración en `playground/`:
+The repo ships an interactive demo in `playground/`:
 
 ```bash
 pnpm install
-pnpm dev        # abre el playground en el navegador
+pnpm dev        # opens the playground in your browser
 ```
 
-Permite pegar de verdad (o abrir/arrastrar un `.tsv`, `.csv` o `.txt`, con
-**detección automática de delimitador**), alternar las opciones del parser, ver el
-grid y copiar la salida como JSON, CSV, TSV o Markdown. Tema claro/oscuro/auto,
-navegación de pestañas con teclado y render por `requestAnimationFrame`.
+It lets you paste for real (or open/drop a `.tsv`, `.csv` or `.txt` file, with automatic
+**delimiter detection**), toggle the parser options, inspect the grid and copy the output
+as JSON, CSV, TSV or Markdown. Light/dark/auto theme, keyboard-friendly tabs and
+`requestAnimationFrame` rendering.
 
 ```bash
-pnpm build:demo # genera la web estática en dist-demo/
+pnpm build:demo # builds the static site into dist-demo/
 ```
 
 ---
 
 ## Scripts
 
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `pnpm dev` | Servidor de desarrollo del playground (Vite). |
-| `pnpm build` | Compila la librería a `dist/` (ESM + CJS + tipos) con tsup. |
-| `pnpm build:demo` | Compila el playground estático. |
-| `pnpm test` | Ejecuta las pruebas (Vitest + jsdom). |
-| `pnpm test:watch` | Pruebas en modo watch. |
-| `pnpm typecheck` | Comprueba tipos con `tsc --noEmit`. |
-| `pnpm size` | Falla si el bundle ESM supera el presupuesto (6 KB gzip). |
+| `pnpm dev` | Development server for the playground (Vite). |
+| `pnpm build` | Builds the library into `dist/` (ESM + CJS + types) with tsup. |
+| `pnpm build:demo` | Builds the static playground. |
+| `pnpm test` | Runs the test suite (Vitest + jsdom). |
+| `pnpm test:watch` | Tests in watch mode. |
+| `pnpm typecheck` | Type-checks with `tsc --noEmit`. |
+| `pnpm size` | Fails if the ESM bundle exceeds the budget (6 KB gzip). |
 
-Tamaño actual: **≈ 9.3 KB raw / ≈ 2.8 KB gzip** (ESM, sin minificar).
+Current size: **≈ 9.3 KB raw / ≈ 2.8 KB gzip** (ESM, unminified).
 
 ---
 
-## Publicar una nueva versión
+## Publishing a new version
 
-La publicación es automática. El workflow [`Release`](./.github/workflows/release.yml)
-se dispara al empujar un tag `vX.Y.Z`, ejecuta `typecheck` + `test` + `build` + `size`,
-publica en npm con **provenance** y crea la release en GitHub con notas generadas.
+Publishing is automatic. The [`Release`](./.github/workflows/release.yml) workflow
+triggers when a `vX.Y.Z` tag is pushed, runs `typecheck` + `test` + `build` + `size`,
+publishes to npm with **provenance** and creates the GitHub release with generated notes.
 
-Configuración única:
+One-time setup:
 
-1. Crea un *access token* de tipo **Automation** en npmjs.com
+1. Create an **Automation** access token on npmjs.com
    (*Account Settings → Access Tokens*).
-2. Añádelo como secreto **`NPM_TOKEN`** en
+2. Add it as the **`NPM_TOKEN`** secret under
    *Settings → Secrets and variables → Actions*.
 
-Publicar es entonces:
+Then publishing is just:
 
 ```bash
-pnpm version patch   # o minor / major: bump + commit + tag vX.Y.Z
+pnpm version patch   # or minor / major: bump + commit + tag vX.Y.Z
 git push --follow-tags
 ```
 
-El workflow además:
-- verifica que el tag coincide con la versión de `package.json`;
-- **no publica dos veces** la misma versión (idempotente al re-lanzarlo);
-- falla con un mensaje claro si falta el secreto `NPM_TOKEN`.
+The workflow also:
+- verifies that the tag matches the version in `package.json`;
+- **never publishes the same version twice** (idempotent when re-run);
+- fails with a clear message if the `NPM_TOKEN` secret is missing.
 
 ---
 
-## Límites conocidos (v0)
+## Known limitations (v0)
 
-- **No** lee ni genera `.xlsx` / `.xls`. Solo portapapeles.
-- **No** interpreta estilos (negrita, color, alineación) aunque la tabla HTML los tenga.
-- **No** interpreta fechas, fórmulas ni formatos; eso lo decides tú con `coerceMatrix`.
-- `text/html`: se expande `colspan`/`rowspan` con los límites del estándar HTML
-  (colspan ≤ 1000, rowspan ≤ 65534). El valor de una celda fusionada va en la primera
-  casilla y el resto quedan vacíos. No se interpretan atributos CSS.
-- El parser de texto **no** entiende CSV con comillas ni saltos de línea dentro de una
-  celda: eso es portapapeles de hoja de cálculo, no CSV. El playground sí trae un lector
-  de CSV mínimo (con comillas y detección de delimitador) para importar archivos,
-  pero no forma parte del núcleo.
-- `toTSV` pierde la ida y vuelta si una celda contiene `\t` o `\n` (límite del formato).
+- It does **not** read or generate `.xlsx` / `.xls` files. Clipboard only.
+- It does **not** interpret styles (bold, color, alignment) even when the HTML table has them.
+- It does **not** interpret dates, formulas or formats; that is your call via `coerceMatrix`.
+- `text/html`: `colspan`/`rowspan` are expanded within the HTML standard limits
+  (colspan ≤ 1000, rowspan ≤ 65534). A merged cell keeps its value in the first slot and
+  the rest stay empty. CSS attributes are not interpreted.
+- The text parser does **not** understand quoted CSV or line breaks inside a cell: that is
+  spreadsheet clipboard, not CSV. The playground ships a minimal CSV reader (with quoting
+  and delimiter detection) for importing files, but it is not part of the core.
+- `toTSV` loses its round-trip if a cell contains `\t` or `\n` (a format limitation).
 
-Si algo de esto aparece en uso real, se añade con pruebas específicas antes de complicar
-el parser (ver `PLAN.md`).
+If any of these shows up in real usage, it will be added with dedicated tests before
+complicating the parser (see `PLAN.md`).
 
 ---
 
 ## Roadmap
 
-Mira [`PLAN.md`](./PLAN.md) para el plan completo, las decisiones de diseño y las
-mejoras propuestas (adaptadores React/Vue, estilos HTML, etc.). El historial de
-cambios vive en [`CHANGELOG.md`](./CHANGELOG.md).
+See [`PLAN.md`](./PLAN.md) for the full plan, design decisions and proposed improvements
+(React/Vue adapters, HTML styles, etc.). The change history lives in
+[`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 
-## Licencia
+## License
 
 [MIT](./LICENSE)
