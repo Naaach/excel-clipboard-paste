@@ -54,6 +54,7 @@ sent.
 - [x] Outputs: Grid, JSON, CSV, TSV, Markdown + copy; `coerce` affects the grid **and** JSON (CSV/TSV/Markdown keep the original text).
 - [x] Accessible tabs (`role=tablist`, `aria-selected`, roving tabindex with arrows/Home/End).
 - [x] Render coalesced with `requestAnimationFrame`; the cap is applied before coercing.
+- [x] README GIF recorded with Playwright over the real playground (`pnpm gif` → `docs/demo.gif`), pure-JS GIF encoding (gifenc), no ffmpeg needed.
 
 ### Quality
 - [x] **72 tests** (Vitest + jsdom): parser, HTML (colspan/rowspan/nested/`<br>`/clamps), utilities, coercion, serializers, playground CSV.
@@ -102,6 +103,8 @@ excel-clipboard-paste/
 │   ├── matrix.test.ts
 │   └── csv.test.ts
 ├── scripts/size.mjs    # size budget
+├── scripts/make-gif.mjs# records the playground and encodes docs/demo.gif
+├── docs/demo.gif       # README demo (regenerate with `pnpm gif`)
 ├── .github/workflows/ci.yml
 ├── .github/workflows/release.yml
 ├── CHANGELOG.md

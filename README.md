@@ -7,6 +7,10 @@
 > Turn what you paste from **Excel** or **Google Sheets** into a clean matrix of rows and columns.
 > Zero dependencies · TypeScript · ESM + CJS · works in the browser and in Node.
 
+<p align="center">
+  <img src="https://github.com/Naaach/excel-clipboard-paste/raw/main/docs/demo.gif" alt="Pasting a Google Sheets Tasks range into the playground: real paste events, live grid, JSON/CSV/TSV/Markdown outputs" width="840" />
+</p>
+
 When you copy a range in a spreadsheet, the browser receives clipboard text separated by
 **tabs** (`\t`) and **line breaks** (`\n`). This library turns it into `string[][]`, i.e.
 into something you can iterate, validate and store.
@@ -181,6 +185,7 @@ pnpm build:demo # builds the static site into dist-demo/
 | `pnpm test:watch` | Tests in watch mode. |
 | `pnpm typecheck` | Type-checks with `tsc --noEmit`. |
 | `pnpm size` | Fails if the ESM bundle exceeds the budget (6 KB gzip). |
+| `pnpm gif` | Rebuilds the demo, records it with Playwright and regenerates `docs/demo.gif`. |
 
 Current size: **≈ 9.3 KB raw / ≈ 2.8 KB gzip** (ESM, unminified).
 

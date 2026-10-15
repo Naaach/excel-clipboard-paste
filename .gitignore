@@ -10,4 +10,5 @@ desktop.ini
 .vite/
 .vscode/
 .idea/
+.gif-frames/
 *.tsbuildinfo
