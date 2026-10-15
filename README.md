@@ -238,9 +238,9 @@ complicating the parser (see `PLAN.md`).
 
 ## Roadmap
 
-See [`PLAN.md`](./PLAN.md) for the full plan, design decisions and proposed improvements
-(React/Vue adapters, HTML styles, etc.). The change history lives in
-[`CHANGELOG.md`](./CHANGELOG.md).
+See [`ROADMAP.md`](./ROADMAP.md) for the evidence-based plan (the real clipboard payloads and
+bug reports behind each item), [`PLAN.md`](./PLAN.md) for design decisions and current status,
+and [`CHANGELOG.md`](./CHANGELOG.md) for the change history.
 
 ---
 

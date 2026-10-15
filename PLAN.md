@@ -109,6 +109,7 @@ excel-clipboard-paste/
 ├── .github/workflows/release.yml
 ├── CHANGELOG.md
 ├── README.md
+├── ROADMAP.md          # evidence-based forward plan
 ├── PLAN.md             # ← this file
 ├── package.json
 ├── pnpm-lock.yaml
@@ -147,69 +148,37 @@ Options: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows`, 
 
 ---
 
-## 6. Proposed improvements (roadmap) 🚧
+## 6. Roadmap
 
-### v0.2 — polish and harden
-- [ ] Code coverage (`@vitest/coverage-v8`) with a minimum threshold in CI.
-- [ ] Real Excel and Google Sheets copies stored as text fixtures.
-- [ ] Manual paste testing in Chrome, Firefox and Safari (Windows/macOS).
-- [ ] `presets.ts` with typical combinations (`forSheets`, `forExcel`).
-- [ ] Recipes in the README (editable table, validation, DB import).
-- [ ] ESLint/Prettier + Dependabot.
-- [ ] Decide whether a lone `\r` inside a cell should count as a row break (today it does).
-
-### v0.3 — more clipboard formats
-- [ ] Basic HTML table styles (`font-weight`, `font-style`, `text-align`, color):
-      tentative API `parseHtmlTable(html, { styles: true }) -> { matrix, styles }`.
-- [ ] Optional and explicit number/date detection (`{ types: true }`), with locale support.
-- [ ] Multiline quoted cells in the **core** (only if real usage demands it).
-- [ ] `readClipboard()` async with the Clipboard API (user permission).
-- [ ] Lightweight `.xlsx` export (or keep it out? see risks).
-
-### v0.3 — adapters (optional, only if there is demand)
-- [ ] `excel-clipboard-paste-react`: `<PasteArea>` + `usePaste`.
-- [ ] `excel-clipboard-paste-vue`: `<PasteArea>` + `usePaste` + plugin.
-- [ ] 100% option parity between adapters.
-
-### v1.0 — consolidate
-- [ ] Frozen API + strict semver.
-- [ ] Deployed playground (GitHub Pages / Cloudflare Pages / Vercel) + GIF in the README.
-- [ ] Changesets for versioning (if it grows into a monorepo).
-
-### Loose ideas / parking (evaluate, do not promise)
-- [ ] A "paste into an editable grid" mode (probably a different package).
-- [ ] Integrations with `handsontable`/`ag-grid` as examples, not dependencies.
-- [ ] CLI `npx excel-clipboard-paste` to convert `.tsv` from stdin to `.json`.
-- [ ] Web Worker for huge ranges.
-- [ ] Heuristic header detection (`{ detectHeader: true }`).
-- [ ] `fromObjects(records)` as the inverse of `toObjects`.
+The forward plan lives in [`ROADMAP.md`](./ROADMAP.md). It is evidence-first: every item
+carries the real clipboard payload or public bug report that justifies it, plus a cost and a
+definition of done. This file stays focused on design decisions and current status.
 
 ---
 
 ## 7. Publishing to npm
 
-✅ **Published: [`excel-clipboard-paste@0.1.0`](https://www.npmjs.com/package/excel-clipboard-paste)**
-(2026-10-15), with **SLSA provenance** signed from GitHub Actions, a registry signature and a
-[GitHub release](https://github.com/Naaach/excel-clipboard-paste/releases/tag/v0.1.0).
+✅ **Latest: [`excel-clipboard-paste@0.1.1`](https://www.npmjs.com/package/excel-clipboard-paste)**
+(`0.1.0` on 2026-10-15 was the first release), with **SLSA provenance** signed from GitHub
+Actions, a registry signature and a
+[GitHub release](https://github.com/Naaach/excel-clipboard-paste/releases/tag/v0.1.1).
 
 The pipeline (`.github/workflows/release.yml`) is the official path: tag `vX.Y.Z` →
 `typecheck + test + build + size` → `npm publish --provenance` → GitHub release.
 Idempotent: if the version is already on npm, it skips publishing.
 
-Notes from the first publish (so we do not step in the same puddle again):
+Release notes worth keeping:
 
-- 🔴 The first attempt failed with `E422`: npm only accepts provenance from **public**
-  repositories. At that moment the registry read the visibility as `private`. Once the
-  public visibility was confirmed (anonymous API), a **rerun of the same run** published
-  without changing anything.
+- The first publish attempt failed with `E422`: npm only accepts provenance from **public**
+  repositories, and the registry briefly read the repository visibility as `private`. With the
+  visibility confirmed public, re-running the same run published unchanged.
 - The registry creates an internal `0.0.0-stage` entry the first time a package name is
-  claimed: it is an npm artifact, not an installable version (the `latest` dist-tag is `0.1.0`).
-- Verified by installing from npm in a clean project: `require` (CJS) and `import` (ESM)
-  both work, with correct types and `exports`.
+  claimed. It is an npm artifact, not an installable version; the `latest` dist-tag is `0.1.1`.
+- Installation verified from npm in a clean project: `require` (CJS) and `import` (ESM) both
+  work, with correct types and `exports`.
 
-Next releases:
-- [ ] `pnpm version patch|minor|major && git push --follow-tags` (the pipeline does the rest).
-- [ ] Consider Changesets if the repo grows into a monorepo (v1.0).
+Release procedure: `pnpm version patch|minor|major`, then `git push --follow-tags`; the Release
+workflow handles the rest. Changesets becomes relevant only if the repo grows into a monorepo.
 
 ---
 
@@ -217,7 +186,7 @@ Next releases:
 
 - [x] Repo created: `github.com/Naaach/excel-clipboard-paste` (public, `main` tracking `origin/main`).
 - [x] CI with Actions (Node 20/22/24) and the Release pipeline (tag → npm + GitHub release).
-- [x] `v0.1.0` release created on GitHub.
+- [x] `v0.1.1` release created on GitHub.
 - [ ] Deploy the playground (Pages) and link it from the README.
 - [ ] Repo topics/description and social image.
 
