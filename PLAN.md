@@ -183,36 +183,35 @@ Opciones: `trim`, `dropEmptyRows`, `dropEmptyColumns`, `rectangular`, `maxRows`,
 
 ## 7. Publicación en npm
 
-El pipeline ya está montado en [`.github/workflows/release.yml`](./.github/workflows/release.yml):
-se dispara con un tag `vX.Y.Z` (o a mano con `workflow_dispatch`), corre
-`typecheck + test + build + size`, publica en npm **con provenance** (`id-token: write`)
-y crea la release en GitHub. Es idempotente: si la versión ya está en npm, lo salta.
+✅ **Publicado: [`excel-clipboard-paste@0.1.0`](https://www.npmjs.com/package/excel-clipboard-paste)**
+(2026-10-15), con **provenance SLSA** firmada desde GitHub Actions, firma del registry y
+[release en GitHub](https://github.com/Naaach/excel-clipboard-paste/releases/tag/v0.1.0).
 
-Nombre `excel-clipboard-paste`: **libre** (comprobado con `npm view` el 2026-10-15).
+El pipeline ([`.github/workflows/release.yml`](./.github/workflows/release.yml)) queda como
+vía oficial: tag `vX.Y.Z` → `typecheck + test + build + size` → `npm publish --provenance`
+→ release de GitHub. Idempotente: si la versión ya está en npm, lo salta.
 
-Lo único que falta para publicar por primera vez:
+Apuntes de la primera publicación (para no volver a pisar el mismo charco):
 
-- [ ] Crear un *access token* de tipo **Automation** en npmjs.com y añadirlo como secreto **`NPM_TOKEN`**
-      (*Settings → Secrets and variables → Actions*).
-- [ ] Subir el primer tag:
+- 🔴 El primer intento falló con `E422`: npm solo acepta provenance de repos **públicos**.
+  En ese momento el registry leyó la visibilidad como `private`. Confirmada la visibilidad
+  pública (API anónima), el **rerun del mismo run** publicó sin cambiar nada.
+- El registry crea una entrada interna `0.0.0-stage` al estrenar un nombre de paquete:
+  es un artefacto de npm, no una versión instalable (el `dist-tag latest` es `0.1.0`).
+- Verificado instalando desde npm en un proyecto limpio: `require` (CJS) e `import` (ESM)
+  funcionan, con tipos y `exports` correctos.
 
-```bash
-pnpm version patch      # bump + commit + tag v0.1.0
-git push --follow-tags  # dispara el workflow Release
-```
-
-Checklist de calidad (ya cubierto por el workflow):
-- [x] `pnpm typecheck && pnpm test && pnpm build && pnpm size` en verde.
-- [x] `pnpm pack --dry-run` revisado (solo `dist/`, README y LICENSE).
-- [x] Tag y versión verificados automáticamente antes de publicar.
-- [ ] Probar el `.tgz` instalándolo en un proyecto limpio (tras la primera publicación).
+Siguientes versiones:
+- [ ] `pnpm version patch|minor|major && git push --follow-tags` (el pipeline hace el resto).
+- [ ] Considerar Changesets si el repo crece a monorepo (v1.0).
 
 ---
 
 ## 8. Repo en GitHub
 
 - [x] Repo creado: `github.com/Naaach/excel-clipboard-paste` (público, `main` trackeando `origin/main`).
-- [x] CI con Actions (Node 20/22/24).
+- [x] CI con Actions (Node 20/22/24) y pipeline Release (tag → npm + release de GitHub).
+- [x] Release `v0.1.0` creada en GitHub.
 - [ ] Desplegar el playground (Pages) y enlazarlo en el README.
 - [ ] Temas/descripción y imagen social del repo.
 

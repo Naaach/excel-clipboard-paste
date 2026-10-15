@@ -1,5 +1,6 @@
 # excel-clipboard-paste
 
+[![npm version](https://img.shields.io/npm/v/excel-clipboard-paste)](https://www.npmjs.com/package/excel-clipboard-paste)
 [![CI](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/ci.yml)
 [![Release](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml/badge.svg)](https://github.com/Naaach/excel-clipboard-paste/actions/workflows/release.yml)
 
